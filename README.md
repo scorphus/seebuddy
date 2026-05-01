@@ -3,24 +3,59 @@
 Live water and weather conditions for swimmable lakes around Munich.
 
 ```sh
-encore run
-curl localhost:4000/lakes
+just backend     # encore run on :4000 (regenerates sqlc + TS client first)
+just frontend    # vite dev server on :5173 (proxies /lakes to :4000)
 ```
 
-A cron job polls each adapter periodically and stores readings. The
-`/lakes` endpoint returns the catalog of known lakes plus the latest
-reading for each.
+First time only: `just frontend-install` to install the npm deps.
+
+## What it does
+
+A cron job polls each adapter periodically and stores readings in a
+shared `readings` table. The `GET /lakes` endpoint returns the catalog
+of known lakes plus the latest reading for each. The frontend renders
+that as a grid of cards: water temperature in focus, air/humidity/wind
+secondary, weather emoji from the WMO code, and a stale badge when the
+reading is older than 90 minutes.
+
+## Layout
+
+```
+backend/
+├── lakes/                # only Encore service: catalog + cron + GET /lakes
+├── adapters/
+│   ├── adapter.go        # Adapter interface
+│   ├── wachplan/         # Wasserwacht LoRaWAN sensors (Lußsee, Langwieder See)
+│   └── generic/          # lakes without a dedicated sensor; uses openmeteo
+└── openmeteo/            # shared lat/lon current-weather client
+frontend/                 # Vue 3 + Vite + Tailwind
+```
 
 ## Adapters
 
 - **wachplan**: water + air temperature + humidity from sensors run by
-  [Wasserwacht München-West](https://sensors.mein-wachplan.de/) (Bernhard
-  Rohloff). Currently covers Lußsee and Langwieder See.
+  [Wasserwacht München-West](https://sensors.mein-wachplan.de/), built and
+  operated by Bernhard Rohloff. Currently covers Lußsee and Langwieder See.
+  Each fetch also enriches the reading with weather data from Open-Meteo
+  (wind, weather code) so the UI has a complete picture.
 - **generic**: lakes without a dedicated sensor. Pulls air temperature,
   humidity, wind, and weather code from [Open-Meteo](https://open-meteo.com/)
   using the lake's lat/lon.
 
-Adding a new lake = edit the relevant adapter's lake list. Adding a new
-data source = new adapter package + register in `lakes/cron.go`.
+Adding a new lake = edit the relevant adapter's lake list.
+Adding a new data source = new adapter package + register in
+`backend/lakes/cron.go`.
+
+## Other commands
+
+```sh
+just test                # encore test ./...
+just lint                # go vet + gofmt check
+just gen                 # gen-sqlc + gen-client
+just gen-sqlc            # sqlc generate
+just gen-client          # encore gen client → frontend/src/client.ts
+```
+
+## License & SLA
 
 Personal project. BSD-3-Clause. No SLA — be nice to upstream services.
