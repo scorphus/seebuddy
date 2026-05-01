@@ -1,0 +1,15 @@
+{
+    "id": "172315",
+    "datetime": "2026-05-01 14:51:10",
+    "app_id": "wassertemperatur-luss-see",
+    "dev_id": "eui-a840414281840166",
+    "ttn_timestamp": "2026-05-01T12:51:10.765868442Z",
+    "gtw_id": "wasserwacht-muenchen-west",
+    "gtw_rssi": "-121",
+    "gtw_snr": "-7",
+    "dev_raw_payload": "y4MGjwGAAQWwf/8=",
+    "dev_value_1": "16.79",
+    "dev_value_2": "14.56",
+    "dev_value_3": "38.4",
+    "dev_value_4": "2.947"
+}
