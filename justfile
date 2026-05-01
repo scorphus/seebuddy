@@ -5,6 +5,14 @@ default:
 backend: gen
     encore run
 
+# Run the frontend dev server (regenerates sqlc + TS client first).
+frontend: gen
+    cd frontend && npm run dev
+
+# One-time install of frontend deps.
+frontend-install:
+    cd frontend && npm install
+
 test:
     encore test ./...
 
