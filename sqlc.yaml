@@ -94,3 +94,18 @@ sql:
         output_db_file_name: sqlc.gen.go
         output_models_file_name: sqlc_models.gen.go
         overrides: *go-overrides
+
+  - engine: postgresql
+    queries: backend/adapters/gkd/queries.sql
+    schema: backend/adapters/gkd/migrations
+    gen:
+      go:
+        package: gkd
+        out: backend/adapters/gkd
+        sql_package: pgx/v5
+        emit_db_tags: true
+        emit_json_tags: true
+        emit_pointers_for_null_types: true
+        output_db_file_name: sqlc.gen.go
+        output_models_file_name: sqlc_models.gen.go
+        overrides: *go-overrides

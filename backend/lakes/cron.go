@@ -8,6 +8,7 @@ import (
 
 	"github.com/scorphus/muenchner-see-buddy/backend/adapters"
 	"github.com/scorphus/muenchner-see-buddy/backend/adapters/generic"
+	"github.com/scorphus/muenchner-see-buddy/backend/adapters/gkd"
 	"github.com/scorphus/muenchner-see-buddy/backend/adapters/wachplan"
 )
 
@@ -15,6 +16,7 @@ import (
 // Adding a new adapter = +1 import and +1 entry here.
 var registered = []adapters.Adapter{
 	wachplan.Adapter{},
+	gkd.Adapter{},
 	generic.Adapter{},
 }
 

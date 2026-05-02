@@ -36,8 +36,11 @@ frontend/                 # Vue 3 + Vite + Tailwind
 - **wachplan**: water + air temperature + humidity from sensors run by
   [Wasserwacht München-West](https://sensors.mein-wachplan.de/), built and
   operated by Bernhard Rohloff. Currently covers Lußsee and Langwieder See.
-  Each fetch also enriches the reading with weather data from Open-Meteo
-  (wind, weather code) so the UI has a complete picture.
+- **gkd**: water temperature scraped from
+  [gkd.bayern.de](https://www.gkd.bayern.de/de/seen/wassertemperatur)
+  (Gewässerkundlicher Dienst Bayern, the official Bavarian state service).
+  Covers Ammersee, Pilsensee, Schliersee, Starnberger See, Tegernsee, and
+  Wörthsee.
 - **generic**: lakes without a dedicated sensor. Pulls air temperature,
   humidity, wind, and weather code from [Open-Meteo](https://open-meteo.com/)
   using the lake's lat/lon.
@@ -59,3 +62,10 @@ just gen-client          # encore gen client → frontend/src/client.ts
 ## License & SLA
 
 Personal project. BSD-3-Clause. No SLA — be nice to upstream services.
+
+## Attribution
+
+GKD water temperature data is provided under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/):
+
+> Datenquelle: Bayerisches Landesamt für Umwelt, www.lfu.bayern.de
