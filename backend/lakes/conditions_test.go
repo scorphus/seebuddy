@@ -29,7 +29,6 @@ func TestBuildView_NoReadings(t *testing.T) {
 func TestBuildView_DedupesAcrossAdapters(t *testing.T) {
 	t.Parallel()
 
-	// Same lake declared by two adapters; should appear once.
 	lakes := []adapters.Lake{
 		{Slug: "shared", Name: "Shared Lake"},
 		{Slug: "shared", Name: "Shared Lake"},
@@ -41,102 +40,21 @@ func TestBuildView_DedupesAcrossAdapters(t *testing.T) {
 	}
 }
 
-func TestBuildView_FreshAndStale(t *testing.T) {
+func TestBuildView_StaleWaterFreshWeather(t *testing.T) {
 	t.Parallel()
 
-	now := time.Date(2026, 5, 1, 15, 0, 0, 0, time.UTC)
-
-	lakes := []adapters.Lake{
-		{Slug: "fresh", Name: "Fresh Lake"},
-		{Slug: "stale", Name: "Stale Lake"},
-		{Slug: "empty", Name: "No Reading Lake"},
-	}
-	temp := 14.56
-	rows := []LatestReadingPerLakePerAdapterRow{
-		{LakeSlug: "fresh", Adapter: "wachplan", MeasuredAt: now.Add(-30 * time.Minute), WaterTempC: &temp},
-		{LakeSlug: "stale", Adapter: "wachplan", MeasuredAt: now.Add(-3 * time.Hour), WaterTempC: &temp},
-	}
-	views := buildView(lakes, rows, now)
-
-	if len(views) != 3 {
-		t.Fatalf("got %d views, want 3", len(views))
-	}
-
-	bySlug := map[string]LakeView{}
-	for _, v := range views {
-		bySlug[v.Slug] = v
-	}
-
-	if v := bySlug["fresh"]; v.Latest == nil || v.Latest.Stale {
-		t.Errorf("fresh: Latest = %+v, want stale=false", v.Latest)
-	}
-	if v := bySlug["stale"]; v.Latest == nil || !v.Latest.Stale {
-		t.Errorf("stale: Latest = %+v, want stale=true", v.Latest)
-	}
-	if v := bySlug["empty"]; v.Latest != nil {
-		t.Errorf("empty: Latest = %+v, want nil", v.Latest)
-	}
-}
-
-func TestBuildView_MergesWeatherWhenSensorIsFresh(t *testing.T) {
-	t.Parallel()
-
-	now := time.Date(2026, 5, 1, 15, 0, 0, 0, time.UTC)
-	water := 14.3
-	wind := 8.6
-	code := int32(0)
+	now := time.Date(2026, 5, 2, 22, 0, 0, 0, time.UTC)
+	water := 10.8
+	wind := 5.0
+	code := int32(3)
 	day := true
 
-	lakes := []adapters.Lake{
-		{Slug: "langwieder", Name: "Langwieder See"},
-	}
+	lakes := []adapters.Lake{{Slug: "tegernsee", Name: "Tegernsee"}}
 	rows := []LatestReadingPerLakePerAdapterRow{
-		// Sensor: 5 minutes ago, fresh.
-		{LakeSlug: "langwieder", Adapter: "wachplan", MeasuredAt: now.Add(-5 * time.Minute), WaterTempC: &water},
-		// Weather: 1 minute ago, fresh.
-		{LakeSlug: "langwieder", Adapter: "generic", MeasuredAt: now.Add(-1 * time.Minute), WindSpeedKmh: &wind, WeatherCode: &code, IsDay: &day},
-	}
-	views := buildView(lakes, rows, now)
-
-	if len(views) != 1 || views[0].Latest == nil {
-		t.Fatalf("expected one view with Latest set, got %+v", views)
-	}
-	v := views[0].Latest
-
-	if v.WaterTempC == nil || *v.WaterTempC != water {
-		t.Errorf("WaterTempC = %v, want %v", v.WaterTempC, water)
-	}
-	// Weather should be merged in because sensor is fresh.
-	if v.WindSpeedKMH == nil || *v.WindSpeedKMH != wind {
-		t.Errorf("WindSpeedKMH = %v, want %v", v.WindSpeedKMH, wind)
-	}
-	if v.WeatherCode == nil || *v.WeatherCode != code {
-		t.Errorf("WeatherCode = %v, want %v", v.WeatherCode, code)
-	}
-	if v.IsDay == nil || !*v.IsDay {
-		t.Errorf("IsDay = %v, want true", v.IsDay)
-	}
-	if v.Stale {
-		t.Error("Stale = true, want false")
-	}
-}
-
-func TestBuildView_DropsWeatherWhenSensorIsStale(t *testing.T) {
-	t.Parallel()
-
-	now := time.Date(2026, 5, 1, 15, 0, 0, 0, time.UTC)
-	water := 14.56
-	wind := 8.6
-	code := int32(0)
-
-	lakes := []adapters.Lake{
-		{Slug: "lusssee", Name: "Lußsee"},
-	}
-	rows := []LatestReadingPerLakePerAdapterRow{
-		// Sensor: 9 hours ago, stale.
-		{LakeSlug: "lusssee", Adapter: "wachplan", MeasuredAt: now.Add(-9 * time.Hour), WaterTempC: &water},
-		// Weather: 1 minute ago, fresh — but won't be blended because sensor is stale.
-		{LakeSlug: "lusssee", Adapter: "generic", MeasuredAt: now.Add(-1 * time.Minute), WindSpeedKmh: &wind, WeatherCode: &code},
+		// Sensor: 12 hours old → stale.
+		{LakeSlug: "tegernsee", Adapter: "gkd", MeasuredAt: now.Add(-12 * time.Hour), WaterTempC: &water},
+		// Weather: 5 minutes old → fresh.
+		{LakeSlug: "tegernsee", Adapter: "generic", MeasuredAt: now.Add(-5 * time.Minute), WindSpeedKmh: &wind, WeatherCode: &code, IsDay: &day},
 	}
 	views := buildView(lakes, rows, now)
 
@@ -145,34 +63,81 @@ func TestBuildView_DropsWeatherWhenSensorIsStale(t *testing.T) {
 		t.Fatal("Latest = nil")
 	}
 
-	if v.WaterTempC == nil || *v.WaterTempC != water {
-		t.Errorf("WaterTempC = %v, want %v", v.WaterTempC, water)
+	// Water: present, water-temp populated, stale.
+	if v.Water == nil {
+		t.Fatal("Water = nil")
 	}
-	if !v.Stale {
-		t.Error("expected Stale=true")
+	if v.Water.TempC == nil || *v.Water.TempC != water {
+		t.Errorf("Water.TempC = %v, want %v", v.Water.TempC, water)
 	}
-	// Weather must NOT be blended in.
-	if v.WindSpeedKMH != nil {
-		t.Errorf("WindSpeedKMH = %v, want nil (sensor stale)", v.WindSpeedKMH)
+	if !v.Water.Stale {
+		t.Error("Water.Stale = false, want true (12h old)")
 	}
-	if v.WeatherCode != nil {
-		t.Errorf("WeatherCode = %v, want nil (sensor stale)", v.WeatherCode)
+	if v.Water.Adapter != "gkd" {
+		t.Errorf("Water.Adapter = %q, want gkd", v.Water.Adapter)
+	}
+
+	// Weather: present and fresh, with all weather fields.
+	if v.Weather == nil {
+		t.Fatal("Weather = nil")
+	}
+	if v.Weather.WindSpeedKMH == nil || *v.Weather.WindSpeedKMH != wind {
+		t.Errorf("Weather.WindSpeedKMH = %v, want %v", v.Weather.WindSpeedKMH, wind)
+	}
+	if v.Weather.Stale {
+		t.Error("Weather.Stale = true, want false (5min old)")
+	}
+	if v.Weather.Adapter != "generic" {
+		t.Errorf("Weather.Adapter = %q, want generic", v.Weather.Adapter)
+	}
+}
+
+func TestBuildView_FreshSensorAndWeather(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 5, 2, 22, 0, 0, 0, time.UTC)
+	water := 14.3
+	air := 12.5
+	humidity := 80.0
+	wind := 8.6
+
+	lakes := []adapters.Lake{{Slug: "langwieder", Name: "Langwieder See"}}
+	rows := []LatestReadingPerLakePerAdapterRow{
+		// Sensor (wachplan) provides air + humidity in addition to water.
+		{LakeSlug: "langwieder", Adapter: "wachplan", MeasuredAt: now.Add(-3 * time.Minute),
+			WaterTempC: &water, AirTempC: &air, HumidityPct: &humidity},
+		// Weather row also has air/humidity from openmeteo, plus wind.
+		{LakeSlug: "langwieder", Adapter: "generic", MeasuredAt: now.Add(-1 * time.Minute),
+			WindSpeedKmh: &wind},
+	}
+	views := buildView(lakes, rows, now)
+
+	v := views[0].Latest
+	if v == nil || v.Water == nil || v.Weather == nil {
+		t.Fatal("expected both Water and Weather populated")
+	}
+	if v.Water.AirTempC == nil || *v.Water.AirTempC != air {
+		t.Errorf("Water.AirTempC = %v, want %v", v.Water.AirTempC, air)
+	}
+	if v.Weather.WindSpeedKMH == nil || *v.Weather.WindSpeedKMH != wind {
+		t.Errorf("Weather.WindSpeedKMH = %v, want %v", v.Weather.WindSpeedKMH, wind)
+	}
+	if v.Water.Stale || v.Weather.Stale {
+		t.Errorf("expected both fresh, got Water.Stale=%v Weather.Stale=%v", v.Water.Stale, v.Weather.Stale)
 	}
 }
 
 func TestBuildView_WeatherOnlyLake(t *testing.T) {
 	t.Parallel()
 
-	now := time.Date(2026, 5, 1, 15, 0, 0, 0, time.UTC)
+	now := time.Date(2026, 5, 2, 22, 0, 0, 0, time.UTC)
 	wind := 8.6
 	code := int32(2)
 
-	lakes := []adapters.Lake{
-		{Slug: "ammersee", Name: "Ammersee"},
-	}
-	// Only a generic/openmeteo row — no sensor.
+	lakes := []adapters.Lake{{Slug: "ammersee", Name: "Ammersee"}}
 	rows := []LatestReadingPerLakePerAdapterRow{
-		{LakeSlug: "ammersee", Adapter: "generic", MeasuredAt: now.Add(-2 * time.Minute), WindSpeedKmh: &wind, WeatherCode: &code},
+		{LakeSlug: "ammersee", Adapter: "generic", MeasuredAt: now.Add(-2 * time.Minute),
+			WindSpeedKmh: &wind, WeatherCode: &code},
 	}
 	views := buildView(lakes, rows, now)
 
@@ -180,13 +145,34 @@ func TestBuildView_WeatherOnlyLake(t *testing.T) {
 	if v == nil {
 		t.Fatal("Latest = nil")
 	}
-	if v.WaterTempC != nil {
-		t.Errorf("WaterTempC = %v, want nil (no sensor)", v.WaterTempC)
+	if v.Water != nil {
+		t.Errorf("Water = %+v, want nil (no sensor)", v.Water)
 	}
-	if v.WindSpeedKMH == nil || *v.WindSpeedKMH != wind {
-		t.Errorf("WindSpeedKMH = %v, want %v", v.WindSpeedKMH, wind)
+	if v.Weather == nil {
+		t.Fatal("Weather = nil")
 	}
-	if v.Stale {
-		t.Error("expected Stale=false")
+	if v.Weather.WindSpeedKMH == nil || *v.Weather.WindSpeedKMH != wind {
+		t.Errorf("Weather.WindSpeedKMH = %v, want %v", v.Weather.WindSpeedKMH, wind)
+	}
+}
+
+func TestBuildView_SensorOnlyLake(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, 5, 2, 22, 0, 0, 0, time.UTC)
+	water := 14.5
+
+	lakes := []adapters.Lake{{Slug: "isolated", Name: "Isolated Lake"}}
+	rows := []LatestReadingPerLakePerAdapterRow{
+		{LakeSlug: "isolated", Adapter: "wachplan", MeasuredAt: now.Add(-1 * time.Minute), WaterTempC: &water},
+	}
+	views := buildView(lakes, rows, now)
+
+	v := views[0].Latest
+	if v == nil || v.Water == nil {
+		t.Fatal("Water = nil")
+	}
+	if v.Weather != nil {
+		t.Errorf("Weather = %+v, want nil (no weather row)", v.Weather)
 	}
 }

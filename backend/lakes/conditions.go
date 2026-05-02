@@ -19,12 +19,33 @@ type LakeView struct {
 	Latest *LatestReading `json:"latest"`
 }
 
+// LatestReading splits the observation into two independent sections so each
+// can carry its own freshness. A lake can have just a sensor (Water), just
+// weather (Weather), or both — and one being stale doesn't hide the other.
 type LatestReading struct {
+	Water   *WaterReading   `json:"water"`
+	Weather *WeatherReading `json:"weather"`
+}
+
+// WaterReading is what a sensor adapter (wachplan, gkd) reports. Some sensors
+// also surface air/humidity (wachplan does); others don't (gkd is water-only).
+type WaterReading struct {
+	Adapter     string    `json:"adapter"`
+	MeasuredAt  time.Time `json:"measured_at"`
+	AgeSeconds  int64     `json:"age_seconds"`
+	Stale       bool      `json:"stale"`
+	TempC       *float64  `json:"temp_c"`
+	AirTempC    *float64  `json:"air_temp_c,omitempty"`
+	HumidityPct *float64  `json:"humidity_pct,omitempty"`
+}
+
+// WeatherReading is the ambient observation from openmeteo (the generic
+// adapter). Always available for any lake in the catalog.
+type WeatherReading struct {
 	Adapter      string    `json:"adapter"`
 	MeasuredAt   time.Time `json:"measured_at"`
 	AgeSeconds   int64     `json:"age_seconds"`
 	Stale        bool      `json:"stale"`
-	WaterTempC   *float64  `json:"water_temp_c"`
 	AirTempC     *float64  `json:"air_temp_c"`
 	HumidityPct  *float64  `json:"humidity_pct"`
 	WindSpeedKMH *float64  `json:"wind_speed_kmh"`
@@ -52,8 +73,9 @@ func List(ctx context.Context) (*ListResponse, error) {
 }
 
 // buildView merges the catalog (deduped across adapters) with the latest
-// readings, joining per-adapter rows for the same lake into one
-// LatestReading.
+// readings, producing one Water section (the freshest sensor row) and one
+// Weather section (the freshest row carrying weather fields) per lake.
+// Either section may be nil when no data is available for it.
 func buildView(lakes []adapters.Lake, readings []LatestReadingPerLakePerAdapterRow, now time.Time) []LakeView {
 	bySlug := make(map[string][]LatestReadingPerLakePerAdapterRow)
 	for _, r := range readings {
@@ -76,21 +98,17 @@ func buildView(lakes []adapters.Lake, readings []LatestReadingPerLakePerAdapterR
 			Lon:    l.Lon,
 		}
 		if rows, ok := bySlug[l.Slug]; ok {
-			view.Latest = mergeReadings(rows, now)
+			view.Latest = splitReadings(rows, now)
 		}
 		out = append(out, view)
 	}
 	return out
 }
 
-// mergeReadings combines rows from one or more adapters into a single
-// LatestReading. The "primary" row (sensor when present, otherwise the
-// freshest) defines the timestamp/age/stale flag. Sensor-source fields
-// (water/air/humidity) come from the sensor row. Weather-source fields
-// (wind/weather code/is_day) are merged from a weather row only when the
-// primary is still fresh — older than stalenessThreshold means we don't
-// blend fresh weather with old water; show the sensor reading as-is.
-func mergeReadings(rows []LatestReadingPerLakePerAdapterRow, now time.Time) *LatestReading {
+// splitReadings picks the best sensor row (has water_temp_c) and the best
+// weather row (has wind/weather_code/is_day) and returns them as separate
+// sections.
+func splitReadings(rows []LatestReadingPerLakePerAdapterRow, now time.Time) *LatestReading {
 	if len(rows) == 0 {
 		return nil
 	}
@@ -110,45 +128,36 @@ func mergeReadings(rows []LatestReadingPerLakePerAdapterRow, now time.Time) *Lat
 		}
 	}
 
-	primary := sensor
-	if primary == nil {
-		primary = weather
-	}
-	if primary == nil {
-		primary = &rows[0]
-		for i := range rows[1:] {
-			if rows[i+1].MeasuredAt.After(primary.MeasuredAt) {
-				primary = &rows[i+1]
-			}
-		}
+	if sensor == nil && weather == nil {
+		return nil
 	}
 
-	age := now.Sub(primary.MeasuredAt)
-	out := &LatestReading{
-		Adapter:    primary.Adapter,
-		MeasuredAt: primary.MeasuredAt,
-		AgeSeconds: int64(age.Seconds()),
-		Stale:      age > stalenessThreshold,
-	}
-
+	out := &LatestReading{}
 	if sensor != nil {
-		out.WaterTempC = sensor.WaterTempC
-		out.AirTempC = sensor.AirTempC
-		out.HumidityPct = sensor.HumidityPct
-	}
-	// Only blend weather when the primary reading is still fresh. Old water
-	// data with fresh weather would be misleading.
-	if weather != nil && !out.Stale {
-		out.WindSpeedKMH = weather.WindSpeedKmh
-		out.WeatherCode = weather.WeatherCode
-		out.IsDay = weather.IsDay
-		if out.AirTempC == nil {
-			out.AirTempC = weather.AirTempC
-		}
-		if out.HumidityPct == nil {
-			out.HumidityPct = weather.HumidityPct
+		age := now.Sub(sensor.MeasuredAt)
+		out.Water = &WaterReading{
+			Adapter:     sensor.Adapter,
+			MeasuredAt:  sensor.MeasuredAt,
+			AgeSeconds:  int64(age.Seconds()),
+			Stale:       age > stalenessThreshold,
+			TempC:       sensor.WaterTempC,
+			AirTempC:    sensor.AirTempC,
+			HumidityPct: sensor.HumidityPct,
 		}
 	}
-
+	if weather != nil {
+		age := now.Sub(weather.MeasuredAt)
+		out.Weather = &WeatherReading{
+			Adapter:      weather.Adapter,
+			MeasuredAt:   weather.MeasuredAt,
+			AgeSeconds:   int64(age.Seconds()),
+			Stale:        age > stalenessThreshold,
+			AirTempC:     weather.AirTempC,
+			HumidityPct:  weather.HumidityPct,
+			WindSpeedKMH: weather.WindSpeedKmh,
+			WeatherCode:  weather.WeatherCode,
+			IsDay:        weather.IsDay,
+		}
+	}
 	return out
 }

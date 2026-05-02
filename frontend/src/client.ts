@@ -93,21 +93,48 @@ export namespace lakes {
         latest: LatestReading
     }
 
+    /**
+     * LatestReading splits the observation into two independent sections so each
+     * can carry its own freshness. A lake can have just a sensor (Water), just
+     * weather (Weather), or both — and one being stale doesn't hide the other.
+     */
     export interface LatestReading {
+        water: WaterReading
+        weather: WeatherReading
+    }
+
+    export interface ListResponse {
+        lakes: LakeView[]
+    }
+
+    /**
+     * WaterReading is what a sensor adapter (wachplan, gkd) reports. Some sensors
+     * also surface air/humidity (wachplan does); others don't (gkd is water-only).
+     */
+    export interface WaterReading {
         adapter: string
         "measured_at": string
         "age_seconds": number
         stale: boolean
-        "water_temp_c": number
+        "temp_c": number
+        "air_temp_c": number
+        "humidity_pct": number
+    }
+
+    /**
+     * WeatherReading is the ambient observation from openmeteo (the generic
+     * adapter). Always available for any lake in the catalog.
+     */
+    export interface WeatherReading {
+        adapter: string
+        "measured_at": string
+        "age_seconds": number
+        stale: boolean
         "air_temp_c": number
         "humidity_pct": number
         "wind_speed_kmh": number
         "weather_code": number
         "is_day": boolean
-    }
-
-    export interface ListResponse {
-        lakes: LakeView[]
     }
 
     export class ServiceClient {
