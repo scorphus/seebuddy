@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Lake } from "../types";
-import { weatherEmoji, relativeTime } from "../weather";
+import { weatherEmoji, relativeTime, windArrow, windCompass } from "../weather";
 
 const props = defineProps<{ lake: Lake }>();
 
@@ -68,7 +68,11 @@ function fmt(n: number | null | undefined, digits = 1): string {
         </div>
         <div>
           <p class="text-xs text-slate-500">Wind</p>
-          <p class="font-medium text-slate-700">
+          <p
+            class="font-medium text-slate-700"
+            :title="weather?.wind_direction_deg != null ? `from ${windCompass(weather.wind_direction_deg)} (${weather.wind_direction_deg}°)` : ''"
+          >
+            <span class="text-slate-400 mr-0.5">{{ windArrow(weather?.wind_direction_deg ?? null) }}</span>
             {{ fmt(weather?.wind_speed_kmh ?? null, 0) }} km/h
           </p>
         </div>

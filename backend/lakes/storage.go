@@ -15,16 +15,17 @@ func storeReading(ctx context.Context, r adapters.LakeReading) error {
 		rawID = &r.RawID
 	}
 	err := queries.InsertReading(ctx, InsertReadingParams{
-		LakeSlug:     r.Slug,
-		Adapter:      r.Adapter,
-		MeasuredAt:   r.MeasuredAt,
-		WaterTempC:   r.WaterTempC,
-		AirTempC:     r.AirTempC,
-		HumidityPct:  r.HumidityPct,
-		WindSpeedKmh: r.WindSpeedKMH,
-		WeatherCode:  r.WeatherCode,
-		IsDay:        r.IsDay,
-		RawID:        rawID,
+		LakeSlug:         r.Slug,
+		Adapter:          r.Adapter,
+		MeasuredAt:       r.MeasuredAt,
+		WaterTempC:       r.WaterTempC,
+		AirTempC:         r.AirTempC,
+		HumidityPct:      r.HumidityPct,
+		WindSpeedKmh:     r.WindSpeedKMH,
+		WindDirectionDeg: r.WindDirectionDeg,
+		WeatherCode:      r.WeatherCode,
+		IsDay:            r.IsDay,
+		RawID:            rawID,
 	})
 	if err != nil {
 		return fmt.Errorf("insert reading: %w", err)

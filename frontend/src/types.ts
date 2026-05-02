@@ -18,6 +18,7 @@ export interface WeatherReading {
   air_temp_c: number | null;
   humidity_pct: number | null;
   wind_speed_kmh: number | null;
+  wind_direction_deg: number | null;
   weather_code: number | null;
   is_day: boolean | null;
 }

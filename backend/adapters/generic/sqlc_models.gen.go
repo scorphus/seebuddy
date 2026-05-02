@@ -20,4 +20,5 @@ type GenericRaw struct {
 	RawPayload            json.RawMessage `db:"raw_payload" json:"raw_payload"`
 	FetchedAt             time.Time       `db:"fetched_at" json:"fetched_at"`
 	IsDay                 *bool           `db:"is_day" json:"is_day"`
+	WindDirection10mDeg   *int32          `db:"wind_direction_10m_deg" json:"wind_direction_10m_deg"`
 }

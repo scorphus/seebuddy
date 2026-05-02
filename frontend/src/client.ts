@@ -133,6 +133,7 @@ export namespace lakes {
         "air_temp_c": number
         "humidity_pct": number
         "wind_speed_kmh": number
+        "wind_direction_deg": number
         "weather_code": number
         "is_day": boolean
     }

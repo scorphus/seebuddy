@@ -14,26 +14,27 @@ const insertReading = `-- name: InsertReading :exec
 INSERT INTO readings (
     lake_slug, adapter, measured_at,
     water_temp_c, air_temp_c, humidity_pct,
-    wind_speed_kmh, weather_code, is_day, raw_id
+    wind_speed_kmh, wind_direction_deg, weather_code, is_day, raw_id
 ) VALUES (
     $1, $2, $3,
     $4, $5, $6,
-    $7, $8, $9, $10
+    $7, $8, $9, $10, $11
 )
 ON CONFLICT (lake_slug, adapter, measured_at) DO NOTHING
 `
 
 type InsertReadingParams struct {
-	LakeSlug     string    `db:"lake_slug" json:"lake_slug"`
-	Adapter      string    `db:"adapter" json:"adapter"`
-	MeasuredAt   time.Time `db:"measured_at" json:"measured_at"`
-	WaterTempC   *float64  `db:"water_temp_c" json:"water_temp_c"`
-	AirTempC     *float64  `db:"air_temp_c" json:"air_temp_c"`
-	HumidityPct  *float64  `db:"humidity_pct" json:"humidity_pct"`
-	WindSpeedKmh *float64  `db:"wind_speed_kmh" json:"wind_speed_kmh"`
-	WeatherCode  *int32    `db:"weather_code" json:"weather_code"`
-	IsDay        *bool     `db:"is_day" json:"is_day"`
-	RawID        *int64    `db:"raw_id" json:"raw_id"`
+	LakeSlug         string    `db:"lake_slug" json:"lake_slug"`
+	Adapter          string    `db:"adapter" json:"adapter"`
+	MeasuredAt       time.Time `db:"measured_at" json:"measured_at"`
+	WaterTempC       *float64  `db:"water_temp_c" json:"water_temp_c"`
+	AirTempC         *float64  `db:"air_temp_c" json:"air_temp_c"`
+	HumidityPct      *float64  `db:"humidity_pct" json:"humidity_pct"`
+	WindSpeedKmh     *float64  `db:"wind_speed_kmh" json:"wind_speed_kmh"`
+	WindDirectionDeg *int32    `db:"wind_direction_deg" json:"wind_direction_deg"`
+	WeatherCode      *int32    `db:"weather_code" json:"weather_code"`
+	IsDay            *bool     `db:"is_day" json:"is_day"`
+	RawID            *int64    `db:"raw_id" json:"raw_id"`
 }
 
 func (q *Queries) InsertReading(ctx context.Context, arg InsertReadingParams) error {
@@ -45,6 +46,7 @@ func (q *Queries) InsertReading(ctx context.Context, arg InsertReadingParams) er
 		arg.AirTempC,
 		arg.HumidityPct,
 		arg.WindSpeedKmh,
+		arg.WindDirectionDeg,
 		arg.WeatherCode,
 		arg.IsDay,
 		arg.RawID,
@@ -56,23 +58,24 @@ const latestReadingPerLakePerAdapter = `-- name: LatestReadingPerLakePerAdapter 
 SELECT DISTINCT ON (lake_slug, adapter)
     lake_slug, adapter, measured_at,
     water_temp_c, air_temp_c, humidity_pct,
-    wind_speed_kmh, weather_code, is_day, raw_id, fetched_at
+    wind_speed_kmh, wind_direction_deg, weather_code, is_day, raw_id, fetched_at
 FROM readings
 ORDER BY lake_slug, adapter, measured_at DESC
 `
 
 type LatestReadingPerLakePerAdapterRow struct {
-	LakeSlug     string    `db:"lake_slug" json:"lake_slug"`
-	Adapter      string    `db:"adapter" json:"adapter"`
-	MeasuredAt   time.Time `db:"measured_at" json:"measured_at"`
-	WaterTempC   *float64  `db:"water_temp_c" json:"water_temp_c"`
-	AirTempC     *float64  `db:"air_temp_c" json:"air_temp_c"`
-	HumidityPct  *float64  `db:"humidity_pct" json:"humidity_pct"`
-	WindSpeedKmh *float64  `db:"wind_speed_kmh" json:"wind_speed_kmh"`
-	WeatherCode  *int32    `db:"weather_code" json:"weather_code"`
-	IsDay        *bool     `db:"is_day" json:"is_day"`
-	RawID        *int64    `db:"raw_id" json:"raw_id"`
-	FetchedAt    time.Time `db:"fetched_at" json:"fetched_at"`
+	LakeSlug         string    `db:"lake_slug" json:"lake_slug"`
+	Adapter          string    `db:"adapter" json:"adapter"`
+	MeasuredAt       time.Time `db:"measured_at" json:"measured_at"`
+	WaterTempC       *float64  `db:"water_temp_c" json:"water_temp_c"`
+	AirTempC         *float64  `db:"air_temp_c" json:"air_temp_c"`
+	HumidityPct      *float64  `db:"humidity_pct" json:"humidity_pct"`
+	WindSpeedKmh     *float64  `db:"wind_speed_kmh" json:"wind_speed_kmh"`
+	WindDirectionDeg *int32    `db:"wind_direction_deg" json:"wind_direction_deg"`
+	WeatherCode      *int32    `db:"weather_code" json:"weather_code"`
+	IsDay            *bool     `db:"is_day" json:"is_day"`
+	RawID            *int64    `db:"raw_id" json:"raw_id"`
+	FetchedAt        time.Time `db:"fetched_at" json:"fetched_at"`
 }
 
 func (q *Queries) LatestReadingPerLakePerAdapter(ctx context.Context) ([]LatestReadingPerLakePerAdapterRow, error) {
@@ -92,6 +95,7 @@ func (q *Queries) LatestReadingPerLakePerAdapter(ctx context.Context) ([]LatestR
 			&i.AirTempC,
 			&i.HumidityPct,
 			&i.WindSpeedKmh,
+			&i.WindDirectionDeg,
 			&i.WeatherCode,
 			&i.IsDay,
 			&i.RawID,

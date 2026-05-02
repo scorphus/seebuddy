@@ -195,6 +195,7 @@ func (Adapter) Tick(ctx context.Context) ([]adapters.LakeReading, error) {
 			Temperature2mC:        w.TempC,
 			RelativeHumidity2mPct: w.HumidityPct,
 			WindSpeed10mKmh:       w.WindKMH,
+			WindDirection10mDeg:   w.WindDirectionDeg,
 			WeatherCode:           w.WeatherCode,
 			IsDay:                 w.IsDay,
 			RawPayload:            raw,
@@ -209,15 +210,16 @@ func (Adapter) Tick(ctx context.Context) ([]adapters.LakeReading, error) {
 		}
 
 		out = append(out, adapters.LakeReading{
-			Lake:         l,
-			Adapter:      id,
-			MeasuredAt:   w.MeasuredAt,
-			AirTempC:     w.TempC,
-			HumidityPct:  w.HumidityPct,
-			WindSpeedKMH: w.WindKMH,
-			WeatherCode:  w.WeatherCode,
-			IsDay:        w.IsDay,
-			RawID:        rawID,
+			Lake:             l,
+			Adapter:          id,
+			MeasuredAt:       w.MeasuredAt,
+			AirTempC:         w.TempC,
+			HumidityPct:      w.HumidityPct,
+			WindSpeedKMH:     w.WindKMH,
+			WindDirectionDeg: w.WindDirectionDeg,
+			WeatherCode:      w.WeatherCode,
+			IsDay:            w.IsDay,
+			RawID:            rawID,
 		})
 	}
 	return out, nil

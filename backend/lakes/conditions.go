@@ -42,15 +42,16 @@ type WaterReading struct {
 // WeatherReading is the ambient observation from openmeteo (the generic
 // adapter). Always available for any lake in the catalog.
 type WeatherReading struct {
-	Adapter      string    `json:"adapter"`
-	MeasuredAt   time.Time `json:"measured_at"`
-	AgeSeconds   int64     `json:"age_seconds"`
-	Stale        bool      `json:"stale"`
-	AirTempC     *float64  `json:"air_temp_c"`
-	HumidityPct  *float64  `json:"humidity_pct"`
-	WindSpeedKMH *float64  `json:"wind_speed_kmh"`
-	WeatherCode  *int32    `json:"weather_code"`
-	IsDay        *bool     `json:"is_day"`
+	Adapter          string    `json:"adapter"`
+	MeasuredAt       time.Time `json:"measured_at"`
+	AgeSeconds       int64     `json:"age_seconds"`
+	Stale            bool      `json:"stale"`
+	AirTempC         *float64  `json:"air_temp_c"`
+	HumidityPct      *float64  `json:"humidity_pct"`
+	WindSpeedKMH     *float64  `json:"wind_speed_kmh"`
+	WindDirectionDeg *int32    `json:"wind_direction_deg"`
+	WeatherCode      *int32    `json:"weather_code"`
+	IsDay            *bool     `json:"is_day"`
 }
 
 type ListResponse struct {
@@ -148,15 +149,16 @@ func splitReadings(rows []LatestReadingPerLakePerAdapterRow, now time.Time) *Lat
 	if weather != nil {
 		age := now.Sub(weather.MeasuredAt)
 		out.Weather = &WeatherReading{
-			Adapter:      weather.Adapter,
-			MeasuredAt:   weather.MeasuredAt,
-			AgeSeconds:   int64(age.Seconds()),
-			Stale:        age > stalenessThreshold,
-			AirTempC:     weather.AirTempC,
-			HumidityPct:  weather.HumidityPct,
-			WindSpeedKMH: weather.WindSpeedKmh,
-			WeatherCode:  weather.WeatherCode,
-			IsDay:        weather.IsDay,
+			Adapter:          weather.Adapter,
+			MeasuredAt:       weather.MeasuredAt,
+			AgeSeconds:       int64(age.Seconds()),
+			Stale:            age > stalenessThreshold,
+			AirTempC:         weather.AirTempC,
+			HumidityPct:      weather.HumidityPct,
+			WindSpeedKMH:     weather.WindSpeedKmh,
+			WindDirectionDeg: weather.WindDirectionDeg,
+			WeatherCode:      weather.WeatherCode,
+			IsDay:            weather.IsDay,
 		}
 	}
 	return out

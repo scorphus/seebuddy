@@ -26,15 +26,16 @@ type Lake struct {
 // Fields not provided by the upstream are left as nil.
 type LakeReading struct {
 	Lake
-	Adapter      string
-	MeasuredAt   time.Time
-	WaterTempC   *float64
-	AirTempC     *float64
-	HumidityPct  *float64
-	WindSpeedKMH *float64
-	WeatherCode  *int32
-	IsDay        *bool
-	RawID        int64 // pointer into the adapter's own raw table; 0 if not stored
+	Adapter          string
+	MeasuredAt       time.Time
+	WaterTempC       *float64
+	AirTempC         *float64
+	HumidityPct      *float64
+	WindSpeedKMH     *float64
+	WindDirectionDeg *int32 // compass degrees the wind blows FROM (0=N, 90=E, 180=S, 270=W)
+	WeatherCode      *int32
+	IsDay            *bool
+	RawID            int64 // pointer into the adapter's own raw table; 0 if not stored
 }
 
 // Adapter is the interface every data source implements.

@@ -9,16 +9,17 @@ import (
 )
 
 type Reading struct {
-	ID           int64     `db:"id" json:"id"`
-	LakeSlug     string    `db:"lake_slug" json:"lake_slug"`
-	Adapter      string    `db:"adapter" json:"adapter"`
-	MeasuredAt   time.Time `db:"measured_at" json:"measured_at"`
-	WaterTempC   *float64  `db:"water_temp_c" json:"water_temp_c"`
-	AirTempC     *float64  `db:"air_temp_c" json:"air_temp_c"`
-	HumidityPct  *float64  `db:"humidity_pct" json:"humidity_pct"`
-	WindSpeedKmh *float64  `db:"wind_speed_kmh" json:"wind_speed_kmh"`
-	WeatherCode  *int32    `db:"weather_code" json:"weather_code"`
-	RawID        *int64    `db:"raw_id" json:"raw_id"`
-	FetchedAt    time.Time `db:"fetched_at" json:"fetched_at"`
-	IsDay        *bool     `db:"is_day" json:"is_day"`
+	ID               int64     `db:"id" json:"id"`
+	LakeSlug         string    `db:"lake_slug" json:"lake_slug"`
+	Adapter          string    `db:"adapter" json:"adapter"`
+	MeasuredAt       time.Time `db:"measured_at" json:"measured_at"`
+	WaterTempC       *float64  `db:"water_temp_c" json:"water_temp_c"`
+	AirTempC         *float64  `db:"air_temp_c" json:"air_temp_c"`
+	HumidityPct      *float64  `db:"humidity_pct" json:"humidity_pct"`
+	WindSpeedKmh     *float64  `db:"wind_speed_kmh" json:"wind_speed_kmh"`
+	WeatherCode      *int32    `db:"weather_code" json:"weather_code"`
+	RawID            *int64    `db:"raw_id" json:"raw_id"`
+	FetchedAt        time.Time `db:"fetched_at" json:"fetched_at"`
+	IsDay            *bool     `db:"is_day" json:"is_day"`
+	WindDirectionDeg *int32    `db:"wind_direction_deg" json:"wind_direction_deg"`
 }

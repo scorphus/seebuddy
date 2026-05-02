@@ -36,6 +36,9 @@ func TestParseResponse(t *testing.T) {
 	if w.IsDay == nil || !*w.IsDay {
 		t.Errorf("IsDay = %v, want true", w.IsDay)
 	}
+	if w.WindDirectionDeg == nil || *w.WindDirectionDeg != 270 {
+		t.Errorf("WindDirectionDeg = %v, want 270", w.WindDirectionDeg)
+	}
 }
 
 func TestParseResponse_NightTime(t *testing.T) {

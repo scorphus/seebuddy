@@ -20,12 +20,13 @@ var httpClient = &http.Client{Timeout: 10 * time.Second}
 
 // Weather is the parsed current-weather snapshot for a coordinate.
 type Weather struct {
-	MeasuredAt  time.Time
-	TempC       *float64
-	HumidityPct *float64
-	WindKMH     *float64
-	WeatherCode *int32
-	IsDay       *bool
+	MeasuredAt       time.Time
+	TempC            *float64
+	HumidityPct      *float64
+	WindKMH          *float64
+	WindDirectionDeg *int32 // compass degrees the wind blows FROM (0 = north, 90 = east)
+	WeatherCode      *int32
+	IsDay            *bool
 }
 
 type apiResponse struct {
@@ -34,6 +35,7 @@ type apiResponse struct {
 		Temperature2m      *float64 `json:"temperature_2m"`
 		RelativeHumidity2m *float64 `json:"relative_humidity_2m"`
 		WindSpeed10m       *float64 `json:"wind_speed_10m"`
+		WindDirection10m   *int32   `json:"wind_direction_10m"`
 		WeatherCode        *int32   `json:"weather_code"`
 		IsDay              *int32   `json:"is_day"`
 	} `json:"current"`
@@ -47,7 +49,7 @@ func FetchWeather(ctx context.Context, lat, lon float64) (Weather, []byte, error
 	url := baseURL +
 		"?latitude=" + strconv.FormatFloat(lat, 'f', 4, 64) +
 		"&longitude=" + strconv.FormatFloat(lon, 'f', 4, 64) +
-		"&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,is_day" +
+		"&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,weather_code,is_day" +
 		"&timezone=UTC"
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -91,11 +93,12 @@ func parseResponse(raw []byte) (Weather, error) {
 	}
 
 	return Weather{
-		MeasuredAt:  measuredAt.UTC(),
-		TempC:       parsed.Current.Temperature2m,
-		HumidityPct: parsed.Current.RelativeHumidity2m,
-		WindKMH:     parsed.Current.WindSpeed10m,
-		WeatherCode: parsed.Current.WeatherCode,
-		IsDay:       isDay,
+		MeasuredAt:       measuredAt.UTC(),
+		TempC:            parsed.Current.Temperature2m,
+		HumidityPct:      parsed.Current.RelativeHumidity2m,
+		WindKMH:          parsed.Current.WindSpeed10m,
+		WindDirectionDeg: parsed.Current.WindDirection10m,
+		WeatherCode:      parsed.Current.WeatherCode,
+		IsDay:            isDay,
 	}, nil
 }

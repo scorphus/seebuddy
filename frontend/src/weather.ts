@@ -46,6 +46,24 @@ export function weatherEmoji(code: number | null, isDay: boolean | null): string
   return day[code] ?? "";
 }
 
+// Wind arrow points in the direction the wind is BLOWING TOWARD (downwind),
+// not where it comes from. Open-Meteo's wind_direction_10m gives the source
+// (whence) in compass degrees, so we add 180° before bucketing into one of
+// the 8 cardinal/intercardinal directions.
+const arrows = ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"];
+const compassFrom = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+
+export function windArrow(degFrom: number | null): string {
+  if (degFrom === null) return "";
+  const degTo = (degFrom + 180) % 360;
+  return arrows[Math.round(degTo / 45) % 8];
+}
+
+export function windCompass(degFrom: number | null): string {
+  if (degFrom === null) return "";
+  return compassFrom[Math.round(degFrom / 45) % 8];
+}
+
 export function relativeTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s ago`;
   const min = Math.round(seconds / 60);
