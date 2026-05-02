@@ -23,6 +23,7 @@ func storeReading(ctx context.Context, r adapters.LakeReading) error {
 		HumidityPct:  r.HumidityPct,
 		WindSpeedKmh: r.WindSpeedKMH,
 		WeatherCode:  r.WeatherCode,
+		IsDay:        r.IsDay,
 		RawID:        rawID,
 	})
 	if err != nil {

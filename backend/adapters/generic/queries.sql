@@ -1,12 +1,12 @@
 -- name: InsertRaw :one
 INSERT INTO generic_raw (
     lake_slug, measured_at,
-    temperature_2m_c, relative_humidity_2m_pct, wind_speed_10m_kmh, weather_code,
+    temperature_2m_c, relative_humidity_2m_pct, wind_speed_10m_kmh, weather_code, is_day,
     raw_payload
 ) VALUES (
     $1, $2,
-    $3, $4, $5, $6,
-    $7
+    $3, $4, $5, $6, $7,
+    $8
 )
 ON CONFLICT (lake_slug, measured_at) DO NOTHING
 RETURNING id;

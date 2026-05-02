@@ -81,6 +81,20 @@ var lakes = []adapters.Lake{
 		Lon:    11.356356,
 	},
 	{
+		Slug:   "langwieder",
+		Name:   "Langwieder See",
+		Region: "munich-west",
+		Lat:    48.195959,
+		Lon:    11.417537,
+	},
+	{
+		Slug:   "lusssee",
+		Name:   "Lußsee",
+		Region: "munich-west",
+		Lat:    48.196504,
+		Lon:    11.417984,
+	},
+	{
 		Slug:   "olchinger",
 		Name:   "Olchinger See",
 		Region: "munich-northwest",
@@ -182,6 +196,7 @@ func (Adapter) Tick(ctx context.Context) ([]adapters.LakeReading, error) {
 			RelativeHumidity2mPct: w.HumidityPct,
 			WindSpeed10mKmh:       w.WindKMH,
 			WeatherCode:           w.WeatherCode,
+			IsDay:                 w.IsDay,
 			RawPayload:            raw,
 		})
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -201,6 +216,7 @@ func (Adapter) Tick(ctx context.Context) ([]adapters.LakeReading, error) {
 			HumidityPct:  w.HumidityPct,
 			WindSpeedKMH: w.WindKMH,
 			WeatherCode:  w.WeatherCode,
+			IsDay:        w.IsDay,
 			RawID:        rawID,
 		})
 	}

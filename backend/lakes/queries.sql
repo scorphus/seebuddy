@@ -2,18 +2,18 @@
 INSERT INTO readings (
     lake_slug, adapter, measured_at,
     water_temp_c, air_temp_c, humidity_pct,
-    wind_speed_kmh, weather_code, raw_id
+    wind_speed_kmh, weather_code, is_day, raw_id
 ) VALUES (
     $1, $2, $3,
     $4, $5, $6,
-    $7, $8, $9
+    $7, $8, $9, $10
 )
 ON CONFLICT (lake_slug, adapter, measured_at) DO NOTHING;
 
--- name: LatestReadingPerLake :many
-SELECT DISTINCT ON (lake_slug)
+-- name: LatestReadingPerLakePerAdapter :many
+SELECT DISTINCT ON (lake_slug, adapter)
     lake_slug, adapter, measured_at,
     water_temp_c, air_temp_c, humidity_pct,
-    wind_speed_kmh, weather_code, raw_id, fetched_at
+    wind_speed_kmh, weather_code, is_day, raw_id, fetched_at
 FROM readings
-ORDER BY lake_slug, measured_at DESC;
+ORDER BY lake_slug, adapter, measured_at DESC;

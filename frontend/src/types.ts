@@ -11,6 +11,7 @@ export interface Reading {
   humidity_pct: number | null;
   wind_speed_kmh: number | null;
   weather_code: number | null;
+  is_day: boolean | null;
 }
 
 export interface Lake {

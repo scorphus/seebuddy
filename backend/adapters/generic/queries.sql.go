@@ -14,12 +14,12 @@ import (
 const insertRaw = `-- name: InsertRaw :one
 INSERT INTO generic_raw (
     lake_slug, measured_at,
-    temperature_2m_c, relative_humidity_2m_pct, wind_speed_10m_kmh, weather_code,
+    temperature_2m_c, relative_humidity_2m_pct, wind_speed_10m_kmh, weather_code, is_day,
     raw_payload
 ) VALUES (
     $1, $2,
-    $3, $4, $5, $6,
-    $7
+    $3, $4, $5, $6, $7,
+    $8
 )
 ON CONFLICT (lake_slug, measured_at) DO NOTHING
 RETURNING id
@@ -32,6 +32,7 @@ type InsertRawParams struct {
 	RelativeHumidity2mPct *float64        `db:"relative_humidity_2m_pct" json:"relative_humidity_2m_pct"`
 	WindSpeed10mKmh       *float64        `db:"wind_speed_10m_kmh" json:"wind_speed_10m_kmh"`
 	WeatherCode           *int32          `db:"weather_code" json:"weather_code"`
+	IsDay                 *bool           `db:"is_day" json:"is_day"`
 	RawPayload            json.RawMessage `db:"raw_payload" json:"raw_payload"`
 }
 
@@ -43,6 +44,7 @@ func (q *Queries) InsertRaw(ctx context.Context, arg InsertRawParams) (int64, er
 		arg.RelativeHumidity2mPct,
 		arg.WindSpeed10mKmh,
 		arg.WeatherCode,
+		arg.IsDay,
 		arg.RawPayload,
 	)
 	var id int64

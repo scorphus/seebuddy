@@ -25,6 +25,7 @@ type Weather struct {
 	HumidityPct *float64
 	WindKMH     *float64
 	WeatherCode *int32
+	IsDay       *bool
 }
 
 type apiResponse struct {
@@ -34,6 +35,7 @@ type apiResponse struct {
 		RelativeHumidity2m *float64 `json:"relative_humidity_2m"`
 		WindSpeed10m       *float64 `json:"wind_speed_10m"`
 		WeatherCode        *int32   `json:"weather_code"`
+		IsDay              *int32   `json:"is_day"`
 	} `json:"current"`
 }
 
@@ -45,7 +47,7 @@ func FetchWeather(ctx context.Context, lat, lon float64) (Weather, []byte, error
 	url := baseURL +
 		"?latitude=" + strconv.FormatFloat(lat, 'f', 4, 64) +
 		"&longitude=" + strconv.FormatFloat(lon, 'f', 4, 64) +
-		"&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code" +
+		"&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code,is_day" +
 		"&timezone=UTC"
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -82,11 +84,18 @@ func parseResponse(raw []byte) (Weather, error) {
 	if err != nil {
 		return Weather{}, fmt.Errorf("parse time %q: %w", parsed.Current.Time, err)
 	}
+	var isDay *bool
+	if parsed.Current.IsDay != nil {
+		b := *parsed.Current.IsDay == 1
+		isDay = &b
+	}
+
 	return Weather{
 		MeasuredAt:  measuredAt.UTC(),
 		TempC:       parsed.Current.Temperature2m,
 		HumidityPct: parsed.Current.RelativeHumidity2m,
 		WindKMH:     parsed.Current.WindSpeed10m,
 		WeatherCode: parsed.Current.WeatherCode,
+		IsDay:       isDay,
 	}, nil
 }

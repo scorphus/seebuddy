@@ -20,4 +20,5 @@ type Reading struct {
 	WeatherCode  *int32    `db:"weather_code" json:"weather_code"`
 	RawID        *int64    `db:"raw_id" json:"raw_id"`
 	FetchedAt    time.Time `db:"fetched_at" json:"fetched_at"`
+	IsDay        *bool     `db:"is_day" json:"is_day"`
 }

@@ -33,6 +33,7 @@ type LakeReading struct {
 	HumidityPct  *float64
 	WindSpeedKMH *float64
 	WeatherCode  *int32
+	IsDay        *bool
 	RawID        int64 // pointer into the adapter's own raw table; 0 if not stored
 }
 

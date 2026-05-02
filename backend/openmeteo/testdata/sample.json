@@ -12,7 +12,8 @@
         "temperature_2m": "°C",
         "relative_humidity_2m": "%",
         "wind_speed_10m": "km/h",
-        "weather_code": "wmo code"
+        "weather_code": "wmo code",
+        "is_day": ""
     },
     "current": {
         "time": "2026-05-01T15:00",
@@ -20,6 +21,7 @@
         "temperature_2m": 14.5,
         "relative_humidity_2m": 65,
         "wind_speed_10m": 12.3,
-        "weather_code": 3
+        "weather_code": 3,
+        "is_day": 1
     }
 }

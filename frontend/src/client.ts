@@ -103,6 +103,7 @@ export namespace lakes {
         "humidity_pct": number
         "wind_speed_kmh": number
         "weather_code": number
+        "is_day": boolean
     }
 
     export interface ListResponse {

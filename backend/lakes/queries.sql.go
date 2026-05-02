@@ -14,11 +14,11 @@ const insertReading = `-- name: InsertReading :exec
 INSERT INTO readings (
     lake_slug, adapter, measured_at,
     water_temp_c, air_temp_c, humidity_pct,
-    wind_speed_kmh, weather_code, raw_id
+    wind_speed_kmh, weather_code, is_day, raw_id
 ) VALUES (
     $1, $2, $3,
     $4, $5, $6,
-    $7, $8, $9
+    $7, $8, $9, $10
 )
 ON CONFLICT (lake_slug, adapter, measured_at) DO NOTHING
 `
@@ -32,6 +32,7 @@ type InsertReadingParams struct {
 	HumidityPct  *float64  `db:"humidity_pct" json:"humidity_pct"`
 	WindSpeedKmh *float64  `db:"wind_speed_kmh" json:"wind_speed_kmh"`
 	WeatherCode  *int32    `db:"weather_code" json:"weather_code"`
+	IsDay        *bool     `db:"is_day" json:"is_day"`
 	RawID        *int64    `db:"raw_id" json:"raw_id"`
 }
 
@@ -45,21 +46,22 @@ func (q *Queries) InsertReading(ctx context.Context, arg InsertReadingParams) er
 		arg.HumidityPct,
 		arg.WindSpeedKmh,
 		arg.WeatherCode,
+		arg.IsDay,
 		arg.RawID,
 	)
 	return err
 }
 
-const latestReadingPerLake = `-- name: LatestReadingPerLake :many
-SELECT DISTINCT ON (lake_slug)
+const latestReadingPerLakePerAdapter = `-- name: LatestReadingPerLakePerAdapter :many
+SELECT DISTINCT ON (lake_slug, adapter)
     lake_slug, adapter, measured_at,
     water_temp_c, air_temp_c, humidity_pct,
-    wind_speed_kmh, weather_code, raw_id, fetched_at
+    wind_speed_kmh, weather_code, is_day, raw_id, fetched_at
 FROM readings
-ORDER BY lake_slug, measured_at DESC
+ORDER BY lake_slug, adapter, measured_at DESC
 `
 
-type LatestReadingPerLakeRow struct {
+type LatestReadingPerLakePerAdapterRow struct {
 	LakeSlug     string    `db:"lake_slug" json:"lake_slug"`
 	Adapter      string    `db:"adapter" json:"adapter"`
 	MeasuredAt   time.Time `db:"measured_at" json:"measured_at"`
@@ -68,19 +70,20 @@ type LatestReadingPerLakeRow struct {
 	HumidityPct  *float64  `db:"humidity_pct" json:"humidity_pct"`
 	WindSpeedKmh *float64  `db:"wind_speed_kmh" json:"wind_speed_kmh"`
 	WeatherCode  *int32    `db:"weather_code" json:"weather_code"`
+	IsDay        *bool     `db:"is_day" json:"is_day"`
 	RawID        *int64    `db:"raw_id" json:"raw_id"`
 	FetchedAt    time.Time `db:"fetched_at" json:"fetched_at"`
 }
 
-func (q *Queries) LatestReadingPerLake(ctx context.Context) ([]LatestReadingPerLakeRow, error) {
-	rows, err := q.db.Query(ctx, latestReadingPerLake)
+func (q *Queries) LatestReadingPerLakePerAdapter(ctx context.Context) ([]LatestReadingPerLakePerAdapterRow, error) {
+	rows, err := q.db.Query(ctx, latestReadingPerLakePerAdapter)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []LatestReadingPerLakeRow
+	var items []LatestReadingPerLakePerAdapterRow
 	for rows.Next() {
-		var i LatestReadingPerLakeRow
+		var i LatestReadingPerLakePerAdapterRow
 		if err := rows.Scan(
 			&i.LakeSlug,
 			&i.Adapter,
@@ -90,6 +93,7 @@ func (q *Queries) LatestReadingPerLake(ctx context.Context) ([]LatestReadingPerL
 			&i.HumidityPct,
 			&i.WindSpeedKmh,
 			&i.WeatherCode,
+			&i.IsDay,
 			&i.RawID,
 			&i.FetchedAt,
 		); err != nil {

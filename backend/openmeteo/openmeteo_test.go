@@ -33,6 +33,21 @@ func TestParseResponse(t *testing.T) {
 	if w.WeatherCode == nil || *w.WeatherCode != 3 {
 		t.Errorf("WeatherCode = %v, want 3", w.WeatherCode)
 	}
+	if w.IsDay == nil || !*w.IsDay {
+		t.Errorf("IsDay = %v, want true", w.IsDay)
+	}
+}
+
+func TestParseResponse_NightTime(t *testing.T) {
+	t.Parallel()
+
+	w, err := parseResponse([]byte(`{"current":{"time":"2026-05-01T03:00","is_day":0,"weather_code":0}}`))
+	if err != nil {
+		t.Fatalf("parseResponse: %v", err)
+	}
+	if w.IsDay == nil || *w.IsDay {
+		t.Errorf("IsDay = %v, want false", w.IsDay)
+	}
 }
 
 func TestParseResponse_BadTime(t *testing.T) {

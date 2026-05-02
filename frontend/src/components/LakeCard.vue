@@ -19,7 +19,7 @@ function fmt(n: number | null, digits = 1): string {
         <p class="text-xs text-slate-500 mt-0.5">{{ lake.region }}</p>
       </div>
       <span class="text-3xl leading-none" :title="`weather code ${lake.latest?.weather_code ?? ''}`">
-        {{ weatherEmoji(lake.latest?.weather_code ?? null) }}
+        {{ weatherEmoji(lake.latest?.weather_code ?? null, lake.latest?.is_day ?? null) }}
       </span>
     </div>
 

@@ -1,7 +1,7 @@
-// WMO weather codes → emoji.
+// WMO weather codes → emoji, with day/night variants for the clear-ish codes.
 // Reference: https://open-meteo.com/en/docs (search "weather_code")
 
-const map: Record<number, string> = {
+const day: Record<number, string> = {
   0: "☀️",
   1: "🌤️",
   2: "⛅",
@@ -32,9 +32,18 @@ const map: Record<number, string> = {
   99: "⛈️",
 };
 
-export function weatherEmoji(code: number | null): string {
+// Codes whose emoji changes at night. The rest (overcast, fog, rain, snow,
+// thunder) look the same regardless of light.
+const night: Record<number, string> = {
+  0: "🌙",
+  1: "🌙",
+  2: "☁️",
+};
+
+export function weatherEmoji(code: number | null, isDay: boolean | null): string {
   if (code === null) return "";
-  return map[code] ?? "";
+  if (isDay === false && night[code]) return night[code];
+  return day[code] ?? "";
 }
 
 export function relativeTime(seconds: number): string {
