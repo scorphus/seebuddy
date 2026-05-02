@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .lake-ghost {
+    @apply opacity-40;
+  }
+  .lake-chosen {
+    @apply ring-2 ring-sky-400;
+  }
+}

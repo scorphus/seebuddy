@@ -1,11 +1,44 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { VueDraggable } from "vue-draggable-plus";
 import type { Lake, ListResponse } from "./types";
 import LakeCard from "./components/LakeCard.vue";
 
 const lakes = ref<Lake[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
+
+const orderKey = "muenchner-see-buddy:lake-order";
+
+function loadOrder(): string[] {
+  try {
+    const raw = localStorage.getItem(orderKey);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOrder(slugs: string[]) {
+  try {
+    localStorage.setItem(orderKey, JSON.stringify(slugs));
+  } catch {
+    // localStorage may be disabled (private mode, etc.) — silently ignore.
+  }
+}
+
+// applyOrder sorts the fetched lakes by the user's saved order. Slugs not
+// in the saved list keep their fetched-order position at the end.
+function applyOrder(fetched: Lake[]): Lake[] {
+  const saved = loadOrder();
+  if (saved.length === 0) return fetched;
+  const rank = new Map(saved.map((s, i) => [s, i]));
+  return [...fetched].sort((a, b) => {
+    const ra = rank.get(a.slug) ?? Infinity;
+    const rb = rank.get(b.slug) ?? Infinity;
+    return ra - rb;
+  });
+}
 
 async function load() {
   loading.value = true;
@@ -14,12 +47,16 @@ async function load() {
     const res = await fetch("/lakes");
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const body = (await res.json()) as ListResponse;
-    lakes.value = body.lakes;
+    lakes.value = applyOrder(body.lakes);
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e);
   } finally {
     loading.value = false;
   }
+}
+
+function onReorder() {
+  saveOrder(lakes.value.map((l) => l.slug));
 }
 
 onMounted(load);
@@ -50,12 +87,22 @@ onMounted(load);
 
       <div v-else-if="loading && lakes.length === 0" class="text-slate-500">Loading...</div>
 
-      <div
+      <VueDraggable
         v-else
+        v-model="lakes"
+        :animation="180"
+        ghost-class="lake-ghost"
+        chosen-class="lake-chosen"
+        @end="onReorder"
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
       >
-        <LakeCard v-for="lake in lakes" :key="lake.slug" :lake="lake" />
-      </div>
+        <LakeCard
+          v-for="lake in lakes"
+          :key="lake.slug"
+          :lake="lake"
+          class="cursor-grab active:cursor-grabbing"
+        />
+      </VueDraggable>
     </main>
   </div>
 </template>
