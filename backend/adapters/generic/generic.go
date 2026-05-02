@@ -19,7 +19,11 @@ import (
 	"github.com/scorphus/muenchner-see-buddy/backend/openmeteo"
 )
 
-const id = "generic"
+// id is the human-readable source identifier surfaced to API consumers.
+// The Go package is still called "generic" because it acts as the catch-all
+// for any lake without a specialized sensor adapter — but today the only
+// upstream behind it is Open-Meteo, so that's what we report.
+const id = "openmeteo"
 
 // period matches Open-Meteo's typical refresh cadence.
 const period = 15 * time.Minute

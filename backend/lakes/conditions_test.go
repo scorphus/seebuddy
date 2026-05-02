@@ -54,7 +54,7 @@ func TestBuildView_StaleWaterFreshWeather(t *testing.T) {
 		// Sensor: 12 hours old → stale.
 		{LakeSlug: "tegernsee", Adapter: "gkd", MeasuredAt: now.Add(-12 * time.Hour), WaterTempC: &water},
 		// Weather: 5 minutes old → fresh.
-		{LakeSlug: "tegernsee", Adapter: "generic", MeasuredAt: now.Add(-5 * time.Minute), WindSpeedKmh: &wind, WeatherCode: &code, IsDay: &day},
+		{LakeSlug: "tegernsee", Adapter: "openmeteo", MeasuredAt: now.Add(-5 * time.Minute), WindSpeedKmh: &wind, WeatherCode: &code, IsDay: &day},
 	}
 	views := buildView(lakes, rows, now)
 
@@ -87,8 +87,8 @@ func TestBuildView_StaleWaterFreshWeather(t *testing.T) {
 	if v.Weather.Stale {
 		t.Error("Weather.Stale = true, want false (5min old)")
 	}
-	if v.Weather.Adapter != "generic" {
-		t.Errorf("Weather.Adapter = %q, want generic", v.Weather.Adapter)
+	if v.Weather.Adapter != "openmeteo" {
+		t.Errorf("Weather.Adapter = %q, want openmeteo", v.Weather.Adapter)
 	}
 }
 
@@ -107,7 +107,7 @@ func TestBuildView_FreshSensorAndWeather(t *testing.T) {
 		{LakeSlug: "langwieder", Adapter: "wachplan", MeasuredAt: now.Add(-3 * time.Minute),
 			WaterTempC: &water, AirTempC: &air, HumidityPct: &humidity},
 		// Weather row also has air/humidity from openmeteo, plus wind.
-		{LakeSlug: "langwieder", Adapter: "generic", MeasuredAt: now.Add(-1 * time.Minute),
+		{LakeSlug: "langwieder", Adapter: "openmeteo", MeasuredAt: now.Add(-1 * time.Minute),
 			WindSpeedKmh: &wind},
 	}
 	views := buildView(lakes, rows, now)
@@ -136,7 +136,7 @@ func TestBuildView_WeatherOnlyLake(t *testing.T) {
 
 	lakes := []adapters.Lake{{Slug: "ammersee", Name: "Ammersee"}}
 	rows := []LatestReadingPerLakePerAdapterRow{
-		{LakeSlug: "ammersee", Adapter: "generic", MeasuredAt: now.Add(-2 * time.Minute),
+		{LakeSlug: "ammersee", Adapter: "openmeteo", MeasuredAt: now.Add(-2 * time.Minute),
 			WindSpeedKmh: &wind, WeatherCode: &code},
 	}
 	views := buildView(lakes, rows, now)
