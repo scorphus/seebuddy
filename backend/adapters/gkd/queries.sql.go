@@ -46,14 +46,3 @@ func (q *Queries) InsertRaw(ctx context.Context, arg InsertRawParams) (int64, er
 	err := row.Scan(&id)
 	return id, err
 }
-
-const maxFetchedAt = `-- name: MaxFetchedAt :one
-SELECT COALESCE(MAX(fetched_at), '1970-01-01 00:00:00+00'::TIMESTAMPTZ)::TIMESTAMPTZ AS max_fetched_at FROM gkd_raw
-`
-
-func (q *Queries) MaxFetchedAt(ctx context.Context) (time.Time, error) {
-	row := q.db.QueryRow(ctx, maxFetchedAt)
-	var max_fetched_at time.Time
-	err := row.Scan(&max_fetched_at)
-	return max_fetched_at, err
-}

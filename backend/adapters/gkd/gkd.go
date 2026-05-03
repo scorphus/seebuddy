@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"encore.dev/rlog"
@@ -41,6 +42,20 @@ var db = sqldb.Driver[*pgxpool.Pool](sqldb.NewDatabase("gkd", sqldb.DatabaseConf
 }))
 
 var queries = New(db)
+
+// lastAttempt gates Tick so we don't retry the (currently flaky from Encore
+// Cloud) GKD upstream on every cron cycle. We track attempts in memory rather
+// than the gkd_raw table because that table only records successful inserts —
+// when every fetch times out, MaxFetchedAt would stay frozen and let us
+// retry-storm 6 lakes × 15s timeout = ~100s per cycle. The mutex makes the
+// gate atomic across concurrent Ticks (cron + worker may overlap).
+//
+// Trade-off: on restart/redeploy, the gate resets and one retry-storm runs
+// before settling. Acceptable.
+var (
+	lastAttempt   time.Time
+	lastAttemptMu sync.Mutex
+)
 
 // gkdLake links a catalog lake to its GKD station. SensorID encodes the URL
 // path segment used to locate the station: "{basin}/{slug}-{id}".
@@ -76,13 +91,13 @@ func (Adapter) Lakes() []adapters.Lake { return lakes }
 //
 //encore:api
 func Tick(ctx context.Context) (*adapters.TickResponse, error) {
-	last, err := queries.MaxFetchedAt(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("max fetched: %w", err)
-	}
-	if time.Since(last) < period {
+	lastAttemptMu.Lock()
+	if time.Since(lastAttempt) < period {
+		lastAttemptMu.Unlock()
 		return &adapters.TickResponse{}, nil
 	}
+	lastAttempt = time.Now()
+	lastAttemptMu.Unlock()
 
 	out := make([]adapters.LakeReading, 0, len(lakes))
 	for i, l := range lakes {

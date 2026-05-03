@@ -8,6 +8,3 @@ INSERT INTO gkd_raw (
 )
 ON CONFLICT (station_id, measured_at) DO NOTHING
 RETURNING id;
-
--- name: MaxFetchedAt :one
-SELECT COALESCE(MAX(fetched_at), '1970-01-01 00:00:00+00'::TIMESTAMPTZ)::TIMESTAMPTZ AS max_fetched_at FROM gkd_raw;
