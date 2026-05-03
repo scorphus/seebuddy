@@ -37,27 +37,45 @@ async function ingestStation(env, sensorID) {
   return { sensorID, ok: true };
 }
 
+async function runCycle(env) {
+  // Run all station ingests concurrently and don't let one failure block
+  // the rest. Each result is logged; the poll trigger fires after.
+  const results = await Promise.allSettled(
+    GKD_STATIONS.map((s) => ingestStation(env, s)),
+  );
+  const summary = [];
+  for (const r of results) {
+    if (r.status === "rejected") {
+      console.error("gkd ingest threw", r.reason);
+      summary.push({ ok: false, error: String(r.reason) });
+    } else {
+      if (!r.value.ok) console.error("gkd ingest failed", r.value);
+      summary.push(r.value);
+    }
+  }
+
+  const poll = await fetch(env.POLL_URL, {
+    method: "POST",
+    headers: { "X-Poll-Token": env.POLL_TOKEN },
+  });
+  if (!poll.ok) {
+    throw new Error(`poll failed: ${poll.status} ${await poll.text()}`);
+  }
+  return summary;
+}
+
 export default {
   async scheduled(event, env, ctx) {
-    // Run all station ingests concurrently and don't let one failure block
-    // the rest. Each result is logged; the poll trigger fires after.
-    const results = await Promise.allSettled(
-      GKD_STATIONS.map((s) => ingestStation(env, s)),
-    );
-    for (const r of results) {
-      if (r.status === "rejected") {
-        console.error("gkd ingest threw", r.reason);
-      } else if (!r.value.ok) {
-        console.error("gkd ingest failed", r.value);
-      }
-    }
+    await runCycle(env);
+  },
 
-    const poll = await fetch(env.POLL_URL, {
-      method: "POST",
-      headers: { "X-Poll-Token": env.POLL_TOKEN },
-    });
-    if (!poll.ok) {
-      throw new Error(`poll failed: ${poll.status} ${await poll.text()}`);
+  // fetch lets us manually trigger one cycle without waiting for the cron.
+  // Authorised by the same shared token so the endpoint isn't an open DoS.
+  async fetch(request, env, ctx) {
+    if (request.headers.get("X-Poll-Token") !== env.POLL_TOKEN) {
+      return new Response("forbidden", { status: 403 });
     }
+    const summary = await runCycle(env);
+    return Response.json({ summary });
   },
 };
