@@ -32,6 +32,7 @@ const BROWSER = typeof globalThis === "object" && ("window" in globalThis);
  * Client is an API client for the seebuddy-y3mi Encore application.
  */
 export default class Client {
+    public readonly gkd: gkd.ServiceClient
     public readonly lakes: lakes.ServiceClient
     private readonly options: ClientOptions
     private readonly target: string
@@ -47,6 +48,7 @@ export default class Client {
         this.target = target
         this.options = options ?? {}
         const base = new BaseClient(this.target, this.options)
+        this.gkd = new gkd.ServiceClient(base)
         this.lakes = new lakes.ServiceClient(base)
     }
 
@@ -76,6 +78,73 @@ export interface ClientOptions {
 
     /** Default RequestInit to be used for the client */
     requestInit?: Omit<RequestInit, "headers"> & { headers?: Record<string, string> }
+}
+
+/**
+ * Package gkd adapts the Gewässerkundlicher Dienst Bayern (gkd.bayern.de),
+ * the official Bavarian state water-temperature service operated by the
+ * Landesamt für Umwelt, to the seebuddy adapter contract. It
+ * scrapes the public HTML mini-table at /messwerte for each station because
+ * GKD's structured endpoints (`/webservices/`, `/downloadcenter/`) are
+ * disallowed by their robots.txt. See docs/INVESTIGATION_GKD.md for the
+ * reasoning.
+ * 
+ * Attribution required by CC BY 4.0:
+ * 
+ * 	Datenquelle: Bayerisches Landesamt für Umwelt, www.lfu.bayern.de
+ */
+export namespace gkd {
+    /**
+     * IngestParams carries one station's HTML mini-table plus the shared poll
+     * token. SensorID follows our "{basin}/{slug}-{id}" convention so the server
+     * can derive station components without trusting the caller to split them.
+     */
+    export interface IngestParams {
+        Token: string
+        "sensor_id": string
+        html: string
+    }
+
+    /**
+     * IngestResponse reports how many newly parsed rows landed in gkd_raw. Rows
+     * already present (UNIQUE conflict) are silently ignored so the worker can
+     * re-post the same HTML without bookkeeping.
+     */
+    export interface IngestResponse {
+        inserted: number
+        parsed: number
+    }
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.Ingest = this.Ingest.bind(this)
+        }
+
+        /**
+         * Ingest accepts a single station's rendered HTML from a non-blocked egress
+         * (the Cloudflare Worker), parses the Wassertemperatur table, and stores
+         * every row. It is the only writer to gkd_raw.
+         */
+        public async Ingest(params: IngestParams): Promise<IngestResponse> {
+            // Convert our params into the objects we need for the request
+            const headers = makeRecord<string, string>({
+                "x-poll-token": params.Token,
+            })
+
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                html:        params.html,
+                "sensor_id": params["sensor_id"],
+            }
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("POST", `/gkd/ingest`, JSON.stringify(body), {headers})
+            return await resp.json() as IngestResponse
+        }
+    }
 }
 
 /**
