@@ -16,7 +16,7 @@ export const Local: BaseURL = "http://localhost:4000"
  * Environment returns a BaseURL for calling the cloud environment with the given name.
  */
 export function Environment(name: string): BaseURL {
-    return `https://${name}-seebudy-um82.encr.app`
+    return `https://${name}-seebuddy-y3mi.encr.app`
 }
 
 /**
@@ -29,7 +29,7 @@ export function PreviewEnv(pr: number | string): BaseURL {
 const BROWSER = typeof globalThis === "object" && ("window" in globalThis);
 
 /**
- * Client is an API client for the seebudy-um82 Encore application.
+ * Client is an API client for the seebuddy-y3mi Encore application.
  */
 export default class Client {
     public readonly lakes: lakes.ServiceClient
@@ -401,7 +401,7 @@ class BaseClient {
         // Add User-Agent header if the script is running in the server
         // because browsers do not allow setting User-Agent headers to requests
         if (!BROWSER) {
-            this.headers["User-Agent"] = "seebudy-um82-Generated-TS-Client (Encore/v1.56.7)";
+            this.headers["User-Agent"] = "seebuddy-y3mi-Generated-TS-Client (Encore/v1.56.7)";
         }
 
         this.requestInit = options.requestInit ?? {};
