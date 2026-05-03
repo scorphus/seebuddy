@@ -130,8 +130,8 @@ export namespace lakes {
     }
 
     /**
-     * WeatherReading is the ambient observation from openmeteo (the generic
-     * adapter). Always available for any lake in the catalog.
+     * WeatherReading is the ambient observation from the openmeteo adapter.
+     * Always available for any lake in the catalog.
      */
     export interface WeatherReading {
         adapter: string

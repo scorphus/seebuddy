@@ -39,8 +39,8 @@ type WaterReading struct {
 	HumidityPct *float64  `json:"humidity_pct,omitempty"`
 }
 
-// WeatherReading is the ambient observation from openmeteo (the generic
-// adapter). Always available for any lake in the catalog.
+// WeatherReading is the ambient observation from the openmeteo adapter.
+// Always available for any lake in the catalog.
 type WeatherReading struct {
 	Adapter          string    `json:"adapter"`
 	MeasuredAt       time.Time `json:"measured_at"`

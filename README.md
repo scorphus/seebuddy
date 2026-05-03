@@ -26,7 +26,8 @@ backend/
 ├── adapters/
 │   ├── adapter.go        # Adapter interface
 │   ├── wachplan/         # Wasserwacht LoRaWAN sensors (Lußsee, Langwieder See)
-│   └── generic/          # lakes without a dedicated sensor; uses openmeteo
+│   ├── gkd/              # Bavarian state service HTML scraper
+│   └── openmeteo/        # lakes without a dedicated sensor; uses Open-Meteo
 └── openmeteo/            # shared lat/lon current-weather client
 frontend/                 # Vue 3 + Vite + Tailwind
 ```
@@ -41,7 +42,7 @@ frontend/                 # Vue 3 + Vite + Tailwind
   (Gewässerkundlicher Dienst Bayern, the official Bavarian state service).
   Covers Ammersee, Pilsensee, Schliersee, Starnberger See, Tegernsee, and
   Wörthsee.
-- **generic**: lakes without a dedicated sensor. Pulls air temperature,
+- **openmeteo**: lakes without a dedicated sensor. Pulls air temperature,
   humidity, wind, and weather code from [Open-Meteo](https://open-meteo.com/)
   using the lake's lat/lon.
 
