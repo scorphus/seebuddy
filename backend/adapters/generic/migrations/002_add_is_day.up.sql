@@ -1,1 +1,0 @@
-ALTER TABLE generic_raw ADD COLUMN is_day BOOLEAN;

@@ -81,12 +81,12 @@ sql:
         overrides: *go-overrides
 
   - engine: postgresql
-    queries: backend/adapters/generic/queries.sql
-    schema: backend/adapters/generic/migrations
+    queries: backend/adapters/openmeteo/queries.sql
+    schema: backend/adapters/openmeteo/migrations
     gen:
       go:
-        package: generic
-        out: backend/adapters/generic
+        package: openmeteo
+        out: backend/adapters/openmeteo
         sql_package: pgx/v5
         emit_db_tags: true
         emit_json_tags: true

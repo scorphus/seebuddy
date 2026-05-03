@@ -7,8 +7,8 @@ import (
 	"encore.dev/rlog"
 
 	"github.com/scorphus/seebudy/backend/adapters"
-	"github.com/scorphus/seebudy/backend/adapters/generic"
 	"github.com/scorphus/seebudy/backend/adapters/gkd"
+	"github.com/scorphus/seebudy/backend/adapters/openmeteo"
 	"github.com/scorphus/seebudy/backend/adapters/wachplan"
 )
 
@@ -20,7 +20,7 @@ import (
 var catalog = []adapters.Adapter{
 	wachplan.Adapter{},
 	gkd.Adapter{},
-	generic.Adapter{},
+	openmeteo.Adapter{},
 }
 
 var _ = cron.NewJob("poll", cron.JobConfig{
@@ -45,7 +45,7 @@ func Poll(ctx context.Context) error {
 	pollAdapters(ctx, []registeredEntry{
 		{id: "wachplan", tick: func(ctx context.Context) (*adapters.TickResponse, error) { return wachplan.Tick(ctx) }},
 		{id: "gkd", tick: func(ctx context.Context) (*adapters.TickResponse, error) { return gkd.Tick(ctx) }},
-		{id: "openmeteo", tick: func(ctx context.Context) (*adapters.TickResponse, error) { return generic.Tick(ctx) }},
+		{id: "openmeteo", tick: func(ctx context.Context) (*adapters.TickResponse, error) { return openmeteo.Tick(ctx) }},
 	}, storeReading)
 	return nil
 }

@@ -2,23 +2,23 @@
 // versions:
 //   sqlc v1.31.1
 
-package generic
+package openmeteo
 
 import (
 	"encoding/json"
 	"time"
 )
 
-type GenericRaw struct {
+type OpenmeteoRaw struct {
 	ID                    int64           `db:"id" json:"id"`
 	LakeSlug              string          `db:"lake_slug" json:"lake_slug"`
 	MeasuredAt            time.Time       `db:"measured_at" json:"measured_at"`
 	Temperature2mC        *float64        `db:"temperature_2m_c" json:"temperature_2m_c"`
 	RelativeHumidity2mPct *float64        `db:"relative_humidity_2m_pct" json:"relative_humidity_2m_pct"`
 	WindSpeed10mKmh       *float64        `db:"wind_speed_10m_kmh" json:"wind_speed_10m_kmh"`
+	WindDirection10mDeg   *int32          `db:"wind_direction_10m_deg" json:"wind_direction_10m_deg"`
 	WeatherCode           *int32          `db:"weather_code" json:"weather_code"`
+	IsDay                 *bool           `db:"is_day" json:"is_day"`
 	RawPayload            json.RawMessage `db:"raw_payload" json:"raw_payload"`
 	FetchedAt             time.Time       `db:"fetched_at" json:"fetched_at"`
-	IsDay                 *bool           `db:"is_day" json:"is_day"`
-	WindDirection10mDeg   *int32          `db:"wind_direction_10m_deg" json:"wind_direction_10m_deg"`
 }

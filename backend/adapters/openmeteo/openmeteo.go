@@ -1,8 +1,7 @@
-// Package generic adapts Open-Meteo to the seebudy adapter
-// contract. It covers lakes that have no dedicated water-temperature sensor
-// but for which we still want air conditions (and which we'll fall back to
-// when no specialized adapter applies).
-package generic
+// Package openmeteo adapts the Open-Meteo current-weather API to the seebudy
+// adapter contract. It covers lakes that have no dedicated water-temperature
+// sensor but for which we still want ambient conditions.
+package openmeteo
 
 import (
 	"context"
@@ -19,16 +18,12 @@ import (
 	"github.com/scorphus/seebudy/backend/openmeteo"
 )
 
-// id is the human-readable source identifier surfaced to API consumers.
-// The Go package is still called "generic" because it acts as the catch-all
-// for any lake without a specialized sensor adapter — but today the only
-// upstream behind it is Open-Meteo, so that's what we report.
 const id = "openmeteo"
 
 // period matches Open-Meteo's typical refresh cadence.
 const period = 15 * time.Minute
 
-var db = sqldb.Driver[*pgxpool.Pool](sqldb.NewDatabase("generic", sqldb.DatabaseConfig{
+var db = sqldb.Driver[*pgxpool.Pool](sqldb.NewDatabase("openmeteo", sqldb.DatabaseConfig{
 	Migrations: "./migrations",
 }))
 
@@ -213,7 +208,7 @@ func Tick(ctx context.Context) (*adapters.TickResponse, error) {
 			continue
 		}
 		if err != nil {
-			rlog.Error("generic insert raw", "lake", l.Slug, "err", err)
+			rlog.Error("openmeteo insert raw", "lake", l.Slug, "err", err)
 			continue
 		}
 
