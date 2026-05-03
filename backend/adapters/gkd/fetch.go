@@ -1,21 +1,13 @@
 package gkd
 
 import (
-	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
-
-const userAgent = "seebuddy/0.1 (+https://github.com/scorphus/seebuddy)"
-const baseURL = "https://www.gkd.bayern.de/de/seen/wassertemperatur/"
-
-var httpClient = &http.Client{Timeout: 15 * time.Second}
 
 // europeBerlin is GKD's reporting timezone. The HTML renders timestamps as
 // `DD.MM.YYYY HH:MM` without a TZ suffix; they are local Bavarian wall-clock
@@ -35,36 +27,6 @@ type parsedReading struct {
 	MeasuredAt time.Time
 	WaterTempC *float64
 	RawHTML    string
-}
-
-// fetch GETs the /messwerte mini-table for a station and returns up to ~7
-// most recent readings parsed from the HTML. The raw response body is
-// returned alongside for forensics.
-func fetch(ctx context.Context, sensorID string) ([]parsedReading, []byte, error) {
-	url := baseURL + sensorID + "/messwerte"
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, nil, fmt.Errorf("build request: %w", err)
-	}
-	req.Header.Set("User-Agent", userAgent)
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, nil, fmt.Errorf("http: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("read body: %w", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, body, fmt.Errorf("upstream status %d", resp.StatusCode)
-	}
-
-	readings, err := parseTable(body)
-	return readings, body, err
 }
 
 // parseTable finds the Wassertemperatur table inside the rendered HTML and

@@ -13,12 +13,12 @@ package gkd
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
-	"time"
 
+	"encore.dev/beta/errs"
 	"encore.dev/rlog"
 	"encore.dev/storage/sqldb"
 	"github.com/jackc/pgx/v5"
@@ -29,33 +29,18 @@ import (
 
 const id = "gkd"
 
-// period mirrors GKD's 15-minute reporting cadence. Going faster wastes
-// upstream load with no fresher data.
-const period = 15 * time.Minute
-
-// politeDelay sits between successive station GETs to keep us well under any
-// reasonable rate limit. With 6 stations this adds up to ~12 s per Tick.
-const politeDelay = 2 * time.Second
-
 var db = sqldb.Driver[*pgxpool.Pool](sqldb.NewDatabase("gkd", sqldb.DatabaseConfig{
 	Migrations: "./migrations",
 }))
 
 var queries = New(db)
 
-// lastAttempt gates Tick so we don't retry the (currently flaky from Encore
-// Cloud) GKD upstream on every cron cycle. We track attempts in memory rather
-// than the gkd_raw table because that table only records successful inserts —
-// when every fetch times out, MaxFetchedAt would stay frozen and let us
-// retry-storm 6 lakes × 15s timeout = ~100s per cycle. The mutex makes the
-// gate atomic across concurrent Ticks (cron + worker may overlap).
-//
-// Trade-off: on restart/redeploy, the gate resets and one retry-storm runs
-// before settling. Acceptable.
-var (
-	lastAttempt   time.Time
-	lastAttemptMu sync.Mutex
-)
+var secrets struct {
+	// PollToken authorises the Cloudflare Worker that proxies GKD HTML
+	// into /gkd/ingest. We share the same secret as lakes.PollExternal so
+	// there's a single token to rotate.
+	PollToken string
+}
 
 // gkdLake links a catalog lake to its GKD station. SensorID encodes the URL
 // path segment used to locate the station: "{basin}/{slug}-{id}".
@@ -86,82 +71,102 @@ func (Adapter) ID() string { return id }
 
 func (Adapter) Lakes() []adapters.Lake { return lakes }
 
-// Tick is exposed as an //encore:api endpoint so this package becomes its
-// own Encore service. See the comment on wachplan.Tick for the reasoning.
+// Tick emits the latest stored reading per GKD station. It does not contact
+// gkd.bayern.de — that upstream silently drops Encore Cloud's egress IPs.
+// Fetching is delegated to the Cloudflare Worker, which POSTs raw HTML into
+// Ingest below, and Tick reads from gkd_raw to build LakeReadings.
 //
 //encore:api
 func Tick(ctx context.Context) (*adapters.TickResponse, error) {
-	lastAttemptMu.Lock()
-	if time.Since(lastAttempt) < period {
-		lastAttemptMu.Unlock()
-		return &adapters.TickResponse{}, nil
+	rows, err := queries.LatestPerStation(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("gkd latest per station: %w", err)
 	}
-	lastAttempt = time.Now()
-	lastAttemptMu.Unlock()
+	byStation := make(map[string]LatestPerStationRow, len(rows))
+	for _, r := range rows {
+		byStation[r.StationID] = r
+	}
 
 	out := make([]adapters.LakeReading, 0, len(lakes))
-	for i, l := range lakes {
-		if i > 0 {
-			select {
-			case <-ctx.Done():
-				return &adapters.TickResponse{Readings: out}, ctx.Err()
-			case <-time.After(politeDelay):
-			}
-		}
-
-		stationID, stationSlug, stationBasin, err := splitSensorID(l.SensorID)
+	for _, l := range lakes {
+		stationID, _, _, err := splitSensorID(l.SensorID)
 		if err != nil {
 			rlog.Error("gkd parse sensor_id", "lake", l.Slug, "sensor_id", l.SensorID, "err", err)
 			continue
 		}
-
-		readings, _, err := fetch(ctx, l.SensorID)
-		if err != nil {
-			rlog.Error("gkd fetch", "lake", l.Slug, "err", err)
+		row, ok := byStation[stationID]
+		if !ok || row.WaterTempC == nil {
 			continue
 		}
-		if len(readings) == 0 {
-			rlog.Warn("gkd no readings", "lake", l.Slug)
-			continue
-		}
-
-		// readings are ordered newest-first as rendered by GKD. We persist
-		// every parsed row (idempotent via UNIQUE) so a backfill captures
-		// any rows we may have missed since the last poll.
-		var newest *parsedReading
-		for j := range readings {
-			r := &readings[j]
-			if _, err := queries.InsertRaw(ctx, InsertRawParams{
-				StationID:    stationID,
-				StationSlug:  stationSlug,
-				StationBasin: stationBasin,
-				StationName:  stationDisplayName(stationSlug),
-				WaterTempC:   r.WaterTempC,
-				MeasuredAt:   r.MeasuredAt,
-				RawRowHtml:   ptrString(r.RawHTML),
-			}); err != nil && !errors.Is(err, pgx.ErrNoRows) {
-				rlog.Error("gkd insert raw", "lake", l.Slug, "measured_at", r.MeasuredAt, "err", err)
-				continue
-			}
-			if newest == nil || r.MeasuredAt.After(newest.MeasuredAt) {
-				newest = r
-			}
-		}
-
-		if newest == nil || newest.WaterTempC == nil {
-			continue
-		}
-
 		out = append(out, adapters.LakeReading{
 			Lake:       l,
 			Adapter:    id,
-			MeasuredAt: newest.MeasuredAt,
-			WaterTempC: newest.WaterTempC,
-			// GKD provides only water temperature; air/wind/etc. come from
-			// the openmeteo adapter via the merge in lakes/conditions.go.
+			MeasuredAt: row.MeasuredAt,
+			WaterTempC: row.WaterTempC,
 		})
 	}
 	return &adapters.TickResponse{Readings: out}, nil
+}
+
+// IngestParams carries one station's HTML mini-table plus the shared poll
+// token. SensorID follows our "{basin}/{slug}-{id}" convention so the server
+// can derive station components without trusting the caller to split them.
+type IngestParams struct {
+	Token    string `header:"X-Poll-Token"`
+	SensorID string `json:"sensor_id"`
+	HTML     string `json:"html"`
+}
+
+// IngestResponse reports how many newly parsed rows landed in gkd_raw. Rows
+// already present (UNIQUE conflict) are silently ignored so the worker can
+// re-post the same HTML without bookkeeping.
+type IngestResponse struct {
+	Inserted int `json:"inserted"`
+	Parsed   int `json:"parsed"`
+}
+
+// Ingest accepts a single station's rendered HTML from a non-blocked egress
+// (the Cloudflare Worker), parses the Wassertemperatur table, and stores
+// every row. It is the only writer to gkd_raw.
+//
+//encore:api public method=POST path=/gkd/ingest
+func Ingest(ctx context.Context, p *IngestParams) (*IngestResponse, error) {
+	if subtle.ConstantTimeCompare([]byte(p.Token), []byte(secrets.PollToken)) != 1 {
+		return nil, &errs.Error{Code: errs.PermissionDenied, Message: "invalid token"}
+	}
+	stationID, stationSlug, stationBasin, err := splitSensorID(p.SensorID)
+	if err != nil {
+		return nil, &errs.Error{Code: errs.InvalidArgument, Message: fmt.Sprintf("bad sensor_id: %v", err)}
+	}
+	parsed, err := parseTable([]byte(p.HTML))
+	if err != nil {
+		return nil, fmt.Errorf("parse: %w", err)
+	}
+
+	resp := &IngestResponse{Parsed: len(parsed)}
+	for j := range parsed {
+		r := &parsed[j]
+		id, err := queries.InsertRaw(ctx, InsertRawParams{
+			StationID:    stationID,
+			StationSlug:  stationSlug,
+			StationBasin: stationBasin,
+			StationName:  stationDisplayName(stationSlug),
+			WaterTempC:   r.WaterTempC,
+			MeasuredAt:   r.MeasuredAt,
+			RawRowHtml:   ptrString(r.RawHTML),
+		})
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				continue
+			}
+			rlog.Error("gkd insert raw", "sensor_id", p.SensorID, "measured_at", r.MeasuredAt, "err", err)
+			continue
+		}
+		if id > 0 {
+			resp.Inserted++
+		}
+	}
+	return resp, nil
 }
 
 // splitSensorID parses our SensorID convention "{basin}/{slug}-{id}" into

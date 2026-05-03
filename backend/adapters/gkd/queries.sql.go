@@ -46,3 +46,37 @@ func (q *Queries) InsertRaw(ctx context.Context, arg InsertRawParams) (int64, er
 	err := row.Scan(&id)
 	return id, err
 }
+
+const latestPerStation = `-- name: LatestPerStation :many
+SELECT DISTINCT ON (station_id)
+    station_id, water_temp_c, measured_at
+FROM gkd_raw
+WHERE water_temp_c IS NOT NULL
+ORDER BY station_id, measured_at DESC
+`
+
+type LatestPerStationRow struct {
+	StationID  string    `db:"station_id" json:"station_id"`
+	WaterTempC *float64  `db:"water_temp_c" json:"water_temp_c"`
+	MeasuredAt time.Time `db:"measured_at" json:"measured_at"`
+}
+
+func (q *Queries) LatestPerStation(ctx context.Context) ([]LatestPerStationRow, error) {
+	rows, err := q.db.Query(ctx, latestPerStation)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LatestPerStationRow
+	for rows.Next() {
+		var i LatestPerStationRow
+		if err := rows.Scan(&i.StationID, &i.WaterTempC, &i.MeasuredAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

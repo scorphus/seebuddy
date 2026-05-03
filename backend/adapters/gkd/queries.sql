@@ -8,3 +8,10 @@ INSERT INTO gkd_raw (
 )
 ON CONFLICT (station_id, measured_at) DO NOTHING
 RETURNING id;
+
+-- name: LatestPerStation :many
+SELECT DISTINCT ON (station_id)
+    station_id, water_temp_c, measured_at
+FROM gkd_raw
+WHERE water_temp_c IS NOT NULL
+ORDER BY station_id, measured_at DESC;
