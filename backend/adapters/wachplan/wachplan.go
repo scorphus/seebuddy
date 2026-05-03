@@ -1,5 +1,5 @@
 // Package wachplan adapts the Wasserwacht München-West LoRaWAN sensor API
-// (https://sensors.mein-wachplan.de) to the muenchner-see-buddy adapter
+// (https://sensors.mein-wachplan.de) to the seebudy adapter
 // contract. It owns the wachplan_raw table where every successful poll is
 // stored verbatim alongside typed columns for forensics.
 package wachplan
@@ -15,7 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/scorphus/muenchner-see-buddy/backend/adapters"
+	"github.com/scorphus/seebudy/backend/adapters"
 )
 
 const id = "wachplan"

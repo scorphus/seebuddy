@@ -26,4 +26,4 @@ gen-sqlc:
     sqlc generate
 
 gen-client:
-    encore gen client muenchner-see-buddy-an4i --output=./frontend/src/client.ts --env=local --lang=typescript
+    encore gen client seebudy-um82 --output=./frontend/src/client.ts --env=local --lang=typescript

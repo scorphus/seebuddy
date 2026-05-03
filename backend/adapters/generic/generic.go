@@ -1,4 +1,4 @@
-// Package generic adapts Open-Meteo to the muenchner-see-buddy adapter
+// Package generic adapts Open-Meteo to the seebudy adapter
 // contract. It covers lakes that have no dedicated water-temperature sensor
 // but for which we still want air conditions (and which we'll fall back to
 // when no specialized adapter applies).
@@ -15,8 +15,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/scorphus/muenchner-see-buddy/backend/adapters"
-	"github.com/scorphus/muenchner-see-buddy/backend/openmeteo"
+	"github.com/scorphus/seebudy/backend/adapters"
+	"github.com/scorphus/seebudy/backend/openmeteo"
 )
 
 // id is the human-readable source identifier surfaced to API consumers.

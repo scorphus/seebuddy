@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/scorphus/muenchner-see-buddy/backend/adapters"
+	"github.com/scorphus/seebudy/backend/adapters"
 )
 
 func TestBuildView_NoReadings(t *testing.T) {

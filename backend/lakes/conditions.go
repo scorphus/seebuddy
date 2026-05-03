@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/scorphus/muenchner-see-buddy/backend/adapters"
+	"github.com/scorphus/seebudy/backend/adapters"
 )
 
 const stalenessThreshold = 90 * time.Minute

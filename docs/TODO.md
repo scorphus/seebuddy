@@ -28,6 +28,33 @@ Coordinates need to be supplied per-lake (don't trust auto-lookups).
 - [ ] Simssee — near Rosenheim
 - [ ] Waginger See + Tachinger See — southeast
 
+## Multi-city + proximity ordering
+
+Today the catalog is implicitly Munich-centric. Generalize:
+
+- [ ] Catalog of cities with `slug`, `name`, `lat`, `lon` (München, Augsburg,
+      Stuttgart, Innsbruck, Berlin, …). Source of truth in code, same pattern
+      as adapter lake lists.
+- [ ] User picks a city (header dropdown). Persisted in localStorage
+      (`seebudy:city`). Default = guess from `navigator.geolocation` or fall
+      back to München.
+- [ ] Backend stays city-agnostic — `/lakes` keeps returning every lake the
+      adapters cover. Sorting/filtering happens in the frontend.
+- [ ] Frontend computes haversine distance from chosen city to each lake;
+      sorts ascending.
+- [ ] First page = 12 lakes. Infinite scroll (IntersectionObserver) appends
+      the next 12 as the user scrolls.
+- [ ] Manual reorder (current drag feature) still wins for lakes the user
+      explicitly moved. Lakes not in the manual order fall through to
+      proximity sort. Both states live under `seebudy:lake-order` and
+      `seebudy:city`.
+- [ ] UI hints: small "X km away" subtitle on the card; city picker in the
+      header; clear visual when sorted by proximity vs. manual order.
+
+Adapter coverage may need to grow per city (Augsburg lakes, Stuttgart
+lakes, …). Until then, far-from-city lakes just show up in the long tail
+of the proximity list.
+
 ## Frontend i18n
 
 Goal: ship `en` (default), `de`, `pt` initially. Keep the backend
@@ -37,7 +64,7 @@ identifier-only — no translatable strings cross the API boundary.
 - [ ] Add `vue-i18n` (composition API mode, `legacy: false`)
 - [ ] Locale files at `frontend/src/locales/{en,de,pt}.json`
 - [ ] Detect initial locale from `navigator.language`, with manual override
-      persisted in `localStorage` (`muenchner-see-buddy:locale`)
+      persisted in `localStorage` (`seebudy:locale`)
 - [ ] Tiny locale switcher in the header (3 buttons or a `<select>`)
 
 ### Strings to extract (frontend only)

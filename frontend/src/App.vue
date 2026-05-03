@@ -8,7 +8,7 @@ const lakes = ref<Lake[]>([]);
 const loading = ref(true);
 const error = ref<string | null>(null);
 
-const orderKey = "muenchner-see-buddy:lake-order";
+const orderKey = "seebudy:lake-order";
 
 function loadOrder(): string[] {
   try {

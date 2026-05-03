@@ -1,7 +1,7 @@
 # Investigation: sensors.mein-wachplan.de
 
 **Date:** 2026-05-01
-**Investigator:** muenchner-see-buddy-research/0.1
+**Investigator:** seebudy-research/0.1
 **Total requests made:** ~40
 
 ## Executive Summary

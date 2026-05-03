@@ -12,7 +12,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-const userAgent = "muenchner-see-buddy/0.1 (+https://github.com/scorphus/muenchner-see-buddy)"
+const userAgent = "seebudy/0.1 (+https://github.com/scorphus/seebudy)"
 const baseURL = "https://www.gkd.bayern.de/de/seen/wassertemperatur/"
 
 var httpClient = &http.Client{Timeout: 15 * time.Second}

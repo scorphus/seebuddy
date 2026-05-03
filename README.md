@@ -1,4 +1,4 @@
-# muenchner-see-buddy
+# seebudy
 
 Live water and weather conditions for swimmable lakes around Munich.
 

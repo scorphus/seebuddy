@@ -1,4 +1,4 @@
-module github.com/scorphus/muenchner-see-buddy
+module github.com/scorphus/seebudy
 
 go 1.26.2
 

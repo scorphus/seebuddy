@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/scorphus/muenchner-see-buddy/backend/adapters"
+	"github.com/scorphus/seebudy/backend/adapters"
 )
 
 type fakeAdapter struct {

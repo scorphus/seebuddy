@@ -1,6 +1,6 @@
 // Package gkd adapts the Gewässerkundlicher Dienst Bayern (gkd.bayern.de),
 // the official Bavarian state water-temperature service operated by the
-// Landesamt für Umwelt, to the muenchner-see-buddy adapter contract. It
+// Landesamt für Umwelt, to the seebudy adapter contract. It
 // scrapes the public HTML mini-table at /messwerte for each station because
 // GKD's structured endpoints (`/webservices/`, `/downloadcenter/`) are
 // disallowed by their robots.txt. See docs/INVESTIGATION_GKD.md for the
@@ -23,7 +23,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/scorphus/muenchner-see-buddy/backend/adapters"
+	"github.com/scorphus/seebudy/backend/adapters"
 )
 
 const id = "gkd"

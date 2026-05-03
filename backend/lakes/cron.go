@@ -6,10 +6,10 @@ import (
 	"encore.dev/cron"
 	"encore.dev/rlog"
 
-	"github.com/scorphus/muenchner-see-buddy/backend/adapters"
-	"github.com/scorphus/muenchner-see-buddy/backend/adapters/generic"
-	"github.com/scorphus/muenchner-see-buddy/backend/adapters/gkd"
-	"github.com/scorphus/muenchner-see-buddy/backend/adapters/wachplan"
+	"github.com/scorphus/seebudy/backend/adapters"
+	"github.com/scorphus/seebudy/backend/adapters/generic"
+	"github.com/scorphus/seebudy/backend/adapters/gkd"
+	"github.com/scorphus/seebudy/backend/adapters/wachplan"
 )
 
 // registered is the list of every adapter the central cron iterates over.

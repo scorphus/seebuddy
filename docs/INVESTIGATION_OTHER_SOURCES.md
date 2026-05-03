@@ -1,8 +1,8 @@
 # Investigation: Other water-temperature sources for Munich-area lakes
 
 **Date:** 2026-05-02
-**Investigator:** muenchner-see-buddy/0.1
-**User-Agent used:** `muenchner-see-buddy/0.1 (+https://github.com/scorphus/muenchner-see-buddy)`
+**Investigator:** seebudy/0.1
+**User-Agent used:** `seebudy/0.1 (+https://github.com/scorphus/seebudy)`
 **Total requests for Part B:** ~16 (cumulative for Parts A+B: ~30, well under budget).
 
 ## Why this scan
