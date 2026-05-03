@@ -71,13 +71,17 @@ func (Adapter) ID() string { return id }
 
 func (Adapter) Lakes() []adapters.Lake { return lakes }
 
-func (Adapter) Tick(ctx context.Context) ([]adapters.LakeReading, error) {
+// Tick is exposed as an //encore:api endpoint so this package becomes its
+// own Encore service. See the comment on wachplan.Tick for the reasoning.
+//
+//encore:api
+func Tick(ctx context.Context) (*adapters.TickResponse, error) {
 	last, err := queries.MaxFetchedAt(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("max fetched: %w", err)
 	}
 	if time.Since(last) < period {
-		return nil, nil
+		return &adapters.TickResponse{}, nil
 	}
 
 	out := make([]adapters.LakeReading, 0, len(lakes))
@@ -85,7 +89,7 @@ func (Adapter) Tick(ctx context.Context) ([]adapters.LakeReading, error) {
 		if i > 0 {
 			select {
 			case <-ctx.Done():
-				return out, ctx.Err()
+				return &adapters.TickResponse{Readings: out}, ctx.Err()
 			case <-time.After(politeDelay):
 			}
 		}
@@ -142,7 +146,7 @@ func (Adapter) Tick(ctx context.Context) ([]adapters.LakeReading, error) {
 			// the openmeteo adapter via the merge in lakes/conditions.go.
 		})
 	}
-	return out, nil
+	return &adapters.TickResponse{Readings: out}, nil
 }
 
 // splitSensorID parses our SensorID convention "{basin}/{slug}-{id}" into

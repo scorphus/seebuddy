@@ -8,29 +8,26 @@ import (
 	"github.com/scorphus/seebudy/backend/adapters"
 )
 
-type fakeAdapter struct {
-	id       string
-	err      error
-	readings []adapters.LakeReading
-}
-
-func (f *fakeAdapter) ID() string             { return f.id }
-func (f *fakeAdapter) Lakes() []adapters.Lake { return nil }
-func (f *fakeAdapter) Tick(_ context.Context) ([]adapters.LakeReading, error) {
-	return f.readings, f.err
+func entry(id string, readings []adapters.LakeReading, err error) registeredEntry {
+	return registeredEntry{
+		id: id,
+		tick: func(_ context.Context) (*adapters.TickResponse, error) {
+			if err != nil {
+				return nil, err
+			}
+			return &adapters.TickResponse{Readings: readings}, nil
+		},
+	}
 }
 
 func TestPollAdapters_OneFailsOthersContinue(t *testing.T) {
 	t.Parallel()
 
-	failing := &fakeAdapter{id: "boom", err: errors.New("upstream down")}
-	working := &fakeAdapter{
-		id: "ok",
-		readings: []adapters.LakeReading{
-			{Lake: adapters.Lake{Slug: "lake-1"}, Adapter: "ok"},
-			{Lake: adapters.Lake{Slug: "lake-2"}, Adapter: "ok"},
-		},
-	}
+	failing := entry("boom", nil, errors.New("upstream down"))
+	working := entry("ok", []adapters.LakeReading{
+		{Lake: adapters.Lake{Slug: "lake-1"}, Adapter: "ok"},
+		{Lake: adapters.Lake{Slug: "lake-2"}, Adapter: "ok"},
+	}, nil)
 
 	var stored []adapters.LakeReading
 	store := func(_ context.Context, r adapters.LakeReading) error {
@@ -38,7 +35,7 @@ func TestPollAdapters_OneFailsOthersContinue(t *testing.T) {
 		return nil
 	}
 
-	pollAdapters(context.Background(), []adapters.Adapter{failing, working}, store)
+	pollAdapters(context.Background(), []registeredEntry{failing, working}, store)
 
 	if len(stored) != 2 {
 		t.Fatalf("stored %d readings, want 2", len(stored))
@@ -51,13 +48,10 @@ func TestPollAdapters_OneFailsOthersContinue(t *testing.T) {
 func TestPollAdapters_StoreErrorDoesNotStopOthers(t *testing.T) {
 	t.Parallel()
 
-	a := &fakeAdapter{
-		id: "a",
-		readings: []adapters.LakeReading{
-			{Lake: adapters.Lake{Slug: "first"}, Adapter: "a"},
-			{Lake: adapters.Lake{Slug: "second"}, Adapter: "a"},
-		},
-	}
+	a := entry("a", []adapters.LakeReading{
+		{Lake: adapters.Lake{Slug: "first"}, Adapter: "a"},
+		{Lake: adapters.Lake{Slug: "second"}, Adapter: "a"},
+	}, nil)
 
 	var attempts []string
 	store := func(_ context.Context, r adapters.LakeReading) error {
@@ -68,7 +62,7 @@ func TestPollAdapters_StoreErrorDoesNotStopOthers(t *testing.T) {
 		return nil
 	}
 
-	pollAdapters(context.Background(), []adapters.Adapter{a}, store)
+	pollAdapters(context.Background(), []registeredEntry{a}, store)
 
 	if len(attempts) != 2 {
 		t.Fatalf("attempts = %v, want both readings to be attempted", attempts)

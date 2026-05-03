@@ -66,7 +66,7 @@ func List(ctx context.Context) (*ListResponse, error) {
 	}
 
 	var allLakes []adapters.Lake
-	for _, a := range registered {
+	for _, a := range catalog {
 		allLakes = append(allLakes, a.Lakes()...)
 	}
 
