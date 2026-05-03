@@ -108,6 +108,14 @@ export namespace lakes {
     }
 
     /**
+     * PollParams carries the shared-secret header the external trigger
+     * (Cloudflare Worker) sends to authorize a poll cycle.
+     */
+    export interface PollParams {
+        Token: string
+    }
+
+    /**
      * WaterReading is what a sensor adapter (wachplan, gkd) reports. Some sensors
      * also surface air/humidity (wachplan does); others don't (gkd is water-only).
      */
@@ -144,12 +152,28 @@ export namespace lakes {
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
             this.List = this.List.bind(this)
+            this.PollExternal = this.PollExternal.bind(this)
         }
 
         public async List(): Promise<ListResponse> {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI("GET", `/lakes`)
             return await resp.json() as ListResponse
+        }
+
+        /**
+         * PollExternal is the public, secret-protected wrapper around Poll. The Encore
+         * free tier caps cron jobs at one execution per hour, so a Cloudflare Worker
+         * hits this endpoint every 15 minutes for fresher data; the internal cron
+         * remains as an hourly fallback.
+         */
+        public async PollExternal(params: PollParams): Promise<void> {
+            // Convert our params into the objects we need for the request
+            const headers = makeRecord<string, string>({
+                "x-poll-token": params.Token,
+            })
+
+            await this.baseClient.callTypedAPI("POST", `/lakes/poll`, undefined, {headers})
         }
     }
 }

@@ -1,0 +1,9 @@
+name = "seebudy-cron"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[vars]
+POLL_URL = "https://staging-seebudy-um82.encr.app/lakes/poll"

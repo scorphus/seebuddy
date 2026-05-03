@@ -2,7 +2,10 @@ package lakes
 
 import (
 	"context"
+	"crypto/subtle"
+	"sync"
 
+	"encore.dev/beta/errs"
 	"encore.dev/cron"
 	"encore.dev/rlog"
 
@@ -11,6 +14,12 @@ import (
 	"github.com/scorphus/seebudy/backend/adapters/openmeteo"
 	"github.com/scorphus/seebudy/backend/adapters/wachplan"
 )
+
+var secrets struct {
+	// PollToken is the shared secret the external trigger (Cloudflare Worker)
+	// presents in the X-Poll-Token header. Set via `encore secret set PollToken`.
+	PollToken string
+}
 
 // catalog is every adapter exposed only for its catalog metadata (Lakes()).
 // Tick is no longer on the Adapter interface because each adapter package is
@@ -50,22 +59,49 @@ func Poll(ctx context.Context) error {
 	return nil
 }
 
-// pollAdapters drives every adapter through one Tick and stores any readings
-// each one returns. A failing adapter logs and is skipped — the others run.
-func pollAdapters(ctx context.Context, all []registeredEntry, store func(context.Context, adapters.LakeReading) error) {
-	for _, e := range all {
-		resp, err := e.tick(ctx)
-		if err != nil {
-			rlog.Error("adapter tick", "adapter", e.id, "err", err)
-			continue
-		}
-		if resp == nil {
-			continue
-		}
-		for _, r := range resp.Readings {
-			if err := store(ctx, r); err != nil {
-				rlog.Error("store reading", "adapter", e.id, "lake", r.Slug, "err", err)
-			}
-		}
+// PollParams carries the shared-secret header the external trigger
+// (Cloudflare Worker) sends to authorize a poll cycle.
+type PollParams struct {
+	Token string `header:"X-Poll-Token"`
+}
+
+// PollExternal is the public, secret-protected wrapper around Poll. The Encore
+// free tier caps cron jobs at one execution per hour, so a Cloudflare Worker
+// hits this endpoint every 15 minutes for fresher data; the internal cron
+// remains as an hourly fallback.
+//
+//encore:api public method=POST path=/lakes/poll
+func PollExternal(ctx context.Context, p *PollParams) error {
+	if subtle.ConstantTimeCompare([]byte(p.Token), []byte(secrets.PollToken)) != 1 {
+		return &errs.Error{Code: errs.PermissionDenied, Message: "invalid token"}
 	}
+	return Poll(ctx)
+}
+
+// pollAdapters drives every adapter through one Tick concurrently and stores
+// any readings each one returns. A failing adapter logs and is skipped — the
+// others run. Each adapter has its own database and Tick is idempotent, so
+// fan-out is safe; pgxpool and rlog are concurrency-safe.
+func pollAdapters(ctx context.Context, all []registeredEntry, store func(context.Context, adapters.LakeReading) error) {
+	var wg sync.WaitGroup
+	for _, e := range all {
+		wg.Add(1)
+		go func(e registeredEntry) {
+			defer wg.Done()
+			resp, err := e.tick(ctx)
+			if err != nil {
+				rlog.Error("adapter tick", "adapter", e.id, "err", err)
+				return
+			}
+			if resp == nil {
+				return
+			}
+			for _, r := range resp.Readings {
+				if err := store(ctx, r); err != nil {
+					rlog.Error("store reading", "adapter", e.id, "lake", r.Slug, "err", err)
+				}
+			}
+		}(e)
+	}
+	wg.Wait()
 }

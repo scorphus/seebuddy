@@ -2,3 +2,9 @@
 encore.gen.go
 encore.gen.cue
 /encore.gen
+
+node_modules/
+
+# Worker artefacts
+/worker/.wrangler
+/worker/.dev.vars

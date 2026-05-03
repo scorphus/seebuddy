@@ -1,0 +1,7 @@
+{
+  "name": "seebudy-cron",
+  "private": true,
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

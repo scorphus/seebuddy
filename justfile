@@ -13,6 +13,14 @@ frontend: gen
 frontend-install:
     cd frontend && npm install
 
+# Deploy the Cloudflare Worker that triggers Poll every 15 min.
+worker-deploy:
+    cd worker && npx wrangler deploy
+
+# One-time install of worker deps.
+worker-install:
+    cd worker && npm install
+
 test:
     encore test ./...
 
