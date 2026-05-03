@@ -96,6 +96,9 @@ onMounted(load);
         v-else
         v-model="lakes"
         :animation="180"
+        :delay="300"
+        :delay-on-touch-only="true"
+        :touch-start-threshold="5"
         ghost-class="lake-ghost"
         chosen-class="lake-chosen"
         @end="onReorder"
