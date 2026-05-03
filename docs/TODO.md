@@ -36,7 +36,7 @@ Today the catalog is implicitly Munich-centric. Generalize:
       Stuttgart, Innsbruck, Berlin, …). Source of truth in code, same pattern
       as adapter lake lists.
 - [ ] User picks a city (header dropdown). Persisted in localStorage
-      (`seebudy:city`). Default = guess from `navigator.geolocation` or fall
+      (`seebuddy:city`). Default = guess from `navigator.geolocation` or fall
       back to München.
 - [ ] Backend stays city-agnostic — `/lakes` keeps returning every lake the
       adapters cover. Sorting/filtering happens in the frontend.
@@ -46,8 +46,8 @@ Today the catalog is implicitly Munich-centric. Generalize:
       the next 12 as the user scrolls.
 - [ ] Manual reorder (current drag feature) still wins for lakes the user
       explicitly moved. Lakes not in the manual order fall through to
-      proximity sort. Both states live under `seebudy:lake-order` and
-      `seebudy:city`.
+      proximity sort. Both states live under `seebuddy:lake-order` and
+      `seebuddy:city`.
 - [ ] UI hints: small "X km away" subtitle on the card; city picker in the
       header; clear visual when sorted by proximity vs. manual order.
 
@@ -64,7 +64,7 @@ identifier-only — no translatable strings cross the API boundary.
 - [ ] Add `vue-i18n` (composition API mode, `legacy: false`)
 - [ ] Locale files at `frontend/src/locales/{en,de,pt}.json`
 - [ ] Detect initial locale from `navigator.language`, with manual override
-      persisted in `localStorage` (`seebudy:locale`)
+      persisted in `localStorage` (`seebuddy:locale`)
 - [ ] Tiny locale switcher in the header (3 buttons or a `<select>`)
 
 ### Strings to extract (frontend only)

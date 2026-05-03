@@ -1,1 +1,0 @@
-ALTER TABLE readings ADD COLUMN is_day BOOLEAN;

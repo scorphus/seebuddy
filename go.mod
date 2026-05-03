@@ -1,4 +1,4 @@
-module github.com/scorphus/seebudy
+module github.com/scorphus/seebuddy
 
 go 1.26.2
 

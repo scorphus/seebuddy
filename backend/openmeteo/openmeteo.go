@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const userAgent = "seebudy/0.1 (+https://github.com/scorphus/seebudy)"
+const userAgent = "seebuddy/0.1 (+https://github.com/scorphus/seebuddy)"
 const baseURL = "https://api.open-meteo.com/v1/forecast"
 
 var httpClient = &http.Client{Timeout: 10 * time.Second}

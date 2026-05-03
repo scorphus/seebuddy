@@ -10,10 +10,10 @@ import (
 	"encore.dev/cron"
 	"encore.dev/rlog"
 
-	"github.com/scorphus/seebudy/backend/adapters"
-	"github.com/scorphus/seebudy/backend/adapters/gkd"
-	"github.com/scorphus/seebudy/backend/adapters/openmeteo"
-	"github.com/scorphus/seebudy/backend/adapters/wachplan"
+	"github.com/scorphus/seebuddy/backend/adapters"
+	"github.com/scorphus/seebuddy/backend/adapters/gkd"
+	"github.com/scorphus/seebuddy/backend/adapters/openmeteo"
+	"github.com/scorphus/seebuddy/backend/adapters/wachplan"
 )
 
 var secrets struct {

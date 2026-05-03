@@ -1,5 +1,5 @@
 {
-  "name": "seebudy-cron",
+  "name": "seebuddy-cron",
   "private": true,
   "devDependencies": {
     "wrangler": "^4"

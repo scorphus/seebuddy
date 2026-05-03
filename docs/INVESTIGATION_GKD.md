@@ -1,11 +1,11 @@
 # Investigation: gkd.bayern.de
 
 **Date:** 2026-05-02
-**Investigator:** seebudy/0.1
+**Investigator:** seebuddy/0.1
 **Total requests made:** ~14 (well under 30-page cap)
-**User-Agent used:** `seebudy/0.1 (+https://github.com/scorphus/seebudy)`
+**User-Agent used:** `seebuddy/0.1 (+https://github.com/scorphus/seebuddy)`
 
-Adapter v0.4 of `seebudy`. Covers the large alpine/foothill lakes via the Gewässerkundlicher Dienst Bayern (official, LfU).
+Adapter v0.4 of `seebuddy`. Covers the large alpine/foothill lakes via the Gewässerkundlicher Dienst Bayern (official, LfU).
 
 ## Executive Summary
 
@@ -152,7 +152,7 @@ JSON-first is not available. The cleanest path is:
    - Temperature: `strings.Replace(v, ",", ".", 1)` then `strconv.ParseFloat`.
    - Skip rows where the temperature cell is `–` / empty (sensor gaps).
 5. **Polite client**:
-   - User-Agent: `seebudy/0.1 (+https://github.com/scorphus/seebudy)`.
+   - User-Agent: `seebuddy/0.1 (+https://github.com/scorphus/seebuddy)`.
    - Sleep ≥ 2 s between GETs to `gkd.bayern.de`.
    - Conditional GET (`If-Modified-Since`) — they don't return `Last-Modified` on the HTML pages, so this is a no-op for now; revisit after observing in production.
    - Total polling: 5 lakes × 1 GET / 15 min = 480 GET/day to GKD. Acceptable.

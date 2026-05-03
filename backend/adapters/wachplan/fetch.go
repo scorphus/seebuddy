@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const userAgent = "seebudy/0.1 (+https://github.com/scorphus/seebudy)"
+const userAgent = "seebuddy/0.1 (+https://github.com/scorphus/seebuddy)"
 const upstreamURL = "https://sensors.mein-wachplan.de/json/"
 
 var httpClient = &http.Client{Timeout: 10 * time.Second}

@@ -1,4 +1,4 @@
-// Package openmeteo adapts the Open-Meteo current-weather API to the seebudy
+// Package openmeteo adapts the Open-Meteo current-weather API to the seebuddy
 // adapter contract. It covers lakes that have no dedicated water-temperature
 // sensor but for which we still want ambient conditions.
 package openmeteo
@@ -14,8 +14,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/scorphus/seebudy/backend/adapters"
-	"github.com/scorphus/seebudy/backend/openmeteo"
+	"github.com/scorphus/seebuddy/backend/adapters"
+	"github.com/scorphus/seebuddy/backend/openmeteo"
 )
 
 const id = "openmeteo"

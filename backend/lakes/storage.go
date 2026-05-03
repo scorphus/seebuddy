@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/scorphus/seebudy/backend/adapters"
+	"github.com/scorphus/seebuddy/backend/adapters"
 )
 
 // storeReading inserts one LakeReading into the readings table. Idempotent

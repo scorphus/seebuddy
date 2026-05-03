@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/scorphus/seebudy/backend/adapters"
+	"github.com/scorphus/seebuddy/backend/adapters"
 )
 
 func entry(id string, readings []adapters.LakeReading, err error) registeredEntry {
