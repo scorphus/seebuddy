@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"sync"
+	"time"
 
 	"encore.dev/beta/errs"
 	"encore.dev/cron"
@@ -83,16 +84,26 @@ func PollExternal(ctx context.Context, p *PollParams) error {
 // others run. Each adapter has its own database and Tick is idempotent, so
 // fan-out is safe; pgxpool and rlog are concurrency-safe.
 func pollAdapters(ctx context.Context, all []registeredEntry, store func(context.Context, adapters.LakeReading) error) {
+	totalStart := time.Now()
 	var wg sync.WaitGroup
 	for _, e := range all {
 		wg.Add(1)
 		go func(e registeredEntry) {
 			defer wg.Done()
+			startedAt := time.Now()
+			rlog.Info("adapter tick start", "adapter", e.id, "elapsed_ms_since_total_start", time.Since(totalStart).Milliseconds())
 			resp, err := e.tick(ctx)
+			tickDur := time.Since(startedAt)
 			if err != nil {
-				rlog.Error("adapter tick", "adapter", e.id, "err", err)
+				rlog.Error("adapter tick", "adapter", e.id, "tick_ms", tickDur.Milliseconds(), "err", err)
 				return
 			}
+			rlog.Info("adapter tick done", "adapter", e.id, "tick_ms", tickDur.Milliseconds(), "readings", func() int {
+				if resp == nil {
+					return 0
+				}
+				return len(resp.Readings)
+			}())
 			if resp == nil {
 				return
 			}
@@ -101,7 +112,9 @@ func pollAdapters(ctx context.Context, all []registeredEntry, store func(context
 					rlog.Error("store reading", "adapter", e.id, "lake", r.Slug, "err", err)
 				}
 			}
+			rlog.Info("adapter done", "adapter", e.id, "total_ms", time.Since(startedAt).Milliseconds())
 		}(e)
 	}
 	wg.Wait()
+	rlog.Info("pollAdapters done", "total_ms", time.Since(totalStart).Milliseconds())
 }
