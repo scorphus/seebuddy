@@ -40,11 +40,16 @@ function applyOrder(fetched: Lake[]): Lake[] {
   });
 }
 
+// In dev, VITE_API_BASE_URL is unset and the empty string lets the Vite
+// proxy forward /lakes to the local Encore daemon. In prod, the host
+// (Cloudflare Pages, etc.) sets this to the deployed Encore URL.
+const apiBase = import.meta.env.VITE_API_BASE_URL ?? "";
+
 async function load() {
   loading.value = true;
   error.value = null;
   try {
-    const res = await fetch("/lakes");
+    const res = await fetch(`${apiBase}/lakes`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const body = (await res.json()) as ListResponse;
     lakes.value = applyOrder(body.lakes);
