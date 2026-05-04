@@ -71,6 +71,30 @@ func (Adapter) ID() string { return id }
 
 func (Adapter) Lakes() []adapters.Lake { return lakes }
 
+// StationsResponse lists every GKD station this adapter knows about, so the
+// Cloudflare Worker that fetches their HTML doesn't need to keep its own
+// copy of the list. Returned in catalog order.
+type StationsResponse struct {
+	Stations []StationRef `json:"stations"`
+}
+
+type StationRef struct {
+	SensorID string `json:"sensor_id"`
+}
+
+// Stations exposes the list of GKD station sensor IDs. Public on purpose —
+// it's the same information already served via /lakes, just in the shape the
+// worker needs.
+//
+//encore:api public method=GET path=/gkd/stations
+func Stations(ctx context.Context) (*StationsResponse, error) {
+	out := make([]StationRef, 0, len(lakes))
+	for _, l := range lakes {
+		out = append(out, StationRef{SensorID: l.SensorID})
+	}
+	return &StationsResponse{Stations: out}, nil
+}
+
 // Tick emits the latest stored reading per GKD station. It does not contact
 // gkd.bayern.de — that upstream silently drops Encore Cloud's egress IPs.
 // Fetching is delegated to the Cloudflare Worker, which POSTs raw HTML into

@@ -1,19 +1,18 @@
-// GKD station sensor IDs in our "{basin}/{slug}-{station_id}" convention.
-// Mirrors backend/adapters/gkd/gkd.go's `lakes` list. Kept in the worker
-// because the worker fetches gkd.bayern.de directly: the Encore Cloud egress
-// IPs are silently filtered there, so the worker is the only place that can
-// reach the upstream.
-const GKD_STATIONS = [
-  "isar/stegen-16602008",
-  "isar/pilsensee-16628055",
-  "isar/schliersee-18222008",
-  "isar/starnberg-16663002",
-  "isar/gmund_tegernsee-18201303",
-  "isar/woerthsee-16651003",
-];
-
+// The worker is intentionally dumb about which stations to fetch — it asks
+// the backend at /gkd/stations on each cycle so the catalog only lives in
+// backend/adapters/gkd/gkd.go. The base URL and User-Agent stay here because
+// they describe how the worker talks to the upstream, not what to fetch.
 const GKD_BASE = "https://www.gkd.bayern.de/de/seen/wassertemperatur/";
 const GKD_USER_AGENT = "seebuddy/0.1 (+https://github.com/scorphus/seebuddy)";
+
+async function listStations(env) {
+  const res = await fetch(env.STATIONS_URL);
+  if (!res.ok) {
+    throw new Error(`stations failed: ${res.status} ${await res.text()}`);
+  }
+  const body = await res.json();
+  return body.stations.map((s) => s.sensor_id);
+}
 
 async function ingestStation(env, sensorID) {
   const upstream = await fetch(GKD_BASE + sensorID + "/messwerte", {
@@ -38,10 +37,11 @@ async function ingestStation(env, sensorID) {
 }
 
 async function runCycle(env) {
+  const stations = await listStations(env);
   // Run all station ingests concurrently and don't let one failure block
   // the rest. Each result is logged; the poll trigger fires after.
   const results = await Promise.allSettled(
-    GKD_STATIONS.map((s) => ingestStation(env, s)),
+    stations.map((s) => ingestStation(env, s)),
   );
   const summary = [];
   for (const r of results) {

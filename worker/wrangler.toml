@@ -8,3 +8,4 @@ crons = ["*/15 * * * *"]
 [vars]
 POLL_URL = "https://staging-seebuddy-y3mi.encr.app/lakes/poll"
 INGEST_URL = "https://staging-seebuddy-y3mi.encr.app/gkd/ingest"
+STATIONS_URL = "https://staging-seebuddy-y3mi.encr.app/gkd/stations"
