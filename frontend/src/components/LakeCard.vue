@@ -8,9 +8,12 @@ const props = defineProps<{ lake: Lake }>();
 const water = computed(() => props.lake.latest?.water ?? null);
 const weather = computed(() => props.lake.latest?.weather ?? null);
 
-// Air & humidity prefer the sensor (richer, on-site) and fall back to weather.
-const airC = computed(() => water.value?.air_temp_c ?? weather.value?.air_temp_c ?? null);
-const humidity = computed(() => water.value?.humidity_pct ?? weather.value?.humidity_pct ?? null);
+// Air and humidity always come from openmeteo. The wachplan buoy also
+// reports these, but the sensor housing biases air several degrees warm
+// vs. ambient — and mixing sources under a single "openmeteo" footer
+// label was misleading.
+const airC = computed(() => weather.value?.air_temp_c ?? null);
+const humidity = computed(() => weather.value?.humidity_pct ?? null);
 
 function fmt(n: number | null | undefined, digits = 1): string {
   return n == null ? "—" : n.toFixed(digits);
