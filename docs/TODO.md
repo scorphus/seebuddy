@@ -105,3 +105,24 @@ identifier-only — no translatable strings cross the API boundary.
 - Adapter docs or attribution string translation
   (`Datenquelle: Bayerisches Landesamt für Umwelt, www.lfu.bayern.de` is a
   fixed attribution per the CC BY 4.0 license — leave as-is)
+
+## Surface multiple readings of the same quantity
+
+Today the card collapses each quantity to one number. When two adapters
+report the same field they're measuring different things, and silently
+picking one hides useful signal. Concrete case (Lußsee tonight): water
+16.2°C, wachplan air 14.3°C (sensor on a buoy, microclimate above the
+surface), openmeteo air 10.0°C (regional ambient station). Both are
+real — the buoy reading is what a swimmer leaving the water actually
+feels, the openmeteo reading is what to dress for on the way over.
+
+Design the card so both can show with clear provenance, e.g.:
+
+- Air at lake: 14.3°C (wachplan)
+- Air regional: 10.0°C (openmeteo)
+
+Applies generally — anywhere a sensor adapter overlaps with the
+openmeteo fallback. Likely also wants to extend to humidity and any
+future overlapping fields. Decide whether the secondary reading shows
+inline, in a hover/tooltip, or behind a "details" toggle so the card
+doesn't get visually noisy on the common case.
